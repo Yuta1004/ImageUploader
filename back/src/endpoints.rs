@@ -2,7 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::{get, post, delete, web, HttpRequest, HttpResponse, Responder};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 use crate::{mysql, s3};
 
@@ -39,8 +39,17 @@ async fn create_album(form: web::Form<NewAlbumForm>, mut payload: Multipart) -> 
 }
 
 #[get("/album/{album}")]
-async fn get_image_list_in_album(path: web::Path<(String,)>) -> impl Responder {
-    let file_list = s3::get_file_list(&path.0).await.unwrap();
+async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
+    let album_id = req.uri().path().replace("/album/", "");
+    match mysql::check_album(&album_id) {
+        Ok(false) => return HttpResponse::build(StatusCode::NOT_FOUND)
+            .body("The specified album is not found."),
+        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!"),
+        _ => {}
+    }
+
+    let file_list = s3::get_file_list(&format!("/{}", album_id)).await.unwrap();
     if file_list.len() > 0 {
         HttpResponse::build(StatusCode::OK)
             .content_type("application/json")
