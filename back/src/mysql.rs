@@ -21,7 +21,7 @@ mod schema {
 mod model {
     use diesel::prelude::{Queryable, Insertable};
 
-    #[derive(Debug, Queryable)]
+    #[derive(Debug, Clone, Queryable)]
     pub struct Album {
         pub id: String,
         pub name: String,
@@ -63,20 +63,27 @@ pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: 
     Ok(album_id)
 }
 
-pub fn check_album(album_id: &String) -> Result<bool, Box<dyn std::error::Error>> {
+pub fn check_album(album_id: &String) -> Result<Option<model::Album>, Box<dyn std::error::Error>> {
     use schema::albums::dsl::*;
 
     let mut conn = create_connection()?;
     let result = albums
         .filter(id.eq(album_id))
         .load::<model::Album>(&mut conn)?;
-    Ok(result.len() > 0)
+
+    if result.len() > 0 {
+        Ok(Some(result[0].clone()))
+    } else {
+        Ok(None)
+    }
 }
 
 pub fn remove_album(album_id: &String) -> Result<(), Box<dyn std::error::Error>> {
     use schema::albums::dsl::*;
 
     let mut conn = create_connection()?;
-    diesel::delete(albums).filter(id.eq(album_id)).execute(&mut conn)?;
+    diesel::delete(albums)
+        .filter(id.eq(album_id))
+        .execute(&mut conn)?;
     Ok(())
 }
