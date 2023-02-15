@@ -1,5 +1,5 @@
 use actix_web::http::StatusCode;
-use actix_web::{get, post, delete, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, post, put, delete, web, HttpRequest, HttpResponse, Responder};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use serde::{Serialize, Deserialize};
@@ -60,7 +60,7 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
     }
 }
 
-#[post("/album/{album}")]
+#[put("/album/{album}")]
 async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
     let album_id = req.uri().path().replace("/album/", "");
     match mysql::check_album(&album_id) {
