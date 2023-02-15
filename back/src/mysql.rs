@@ -53,14 +53,13 @@ fn create_connection() -> Result<MysqlConnection, ConnectionError> {
 }
 
 pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: &String) -> Result<String, Box<dyn std::error::Error>> {
-    let mut conn = create_connection()?;
-
     let album_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
     let new_album = model::NewAlbum::new(&album_id, &name, writable, removable, passphrase);
+
+    let mut conn = create_connection()?;
     diesel::insert_into(schema::albums::dsl::albums)
         .values(&new_album)
         .execute(&mut conn)?;
-
     Ok(album_id)
 }
 
@@ -72,4 +71,12 @@ pub fn check_album(album_id: &String) -> Result<bool, Box<dyn std::error::Error>
         .filter(id.eq(album_id))
         .load::<model::Album>(&mut conn)?;
     Ok(result.len() > 0)
+}
+
+pub fn remove_album(album_id: &String) -> Result<(), Box<dyn std::error::Error>> {
+    use schema::albums::dsl::*;
+
+    let mut conn = create_connection()?;
+    diesel::delete(albums).filter(id.eq(album_id)).execute(&mut conn)?;
+    Ok(())
 }

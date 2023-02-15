@@ -1,5 +1,5 @@
 use actix_web::http::StatusCode;
-use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, post, delete, web, HttpRequest, HttpResponse, Responder};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use serde::Deserialize;
@@ -76,6 +76,25 @@ async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl
     }
 
     HttpResponse::build(StatusCode::OK).body(album_id)
+}
+
+#[delete("/album/{album}")]
+async fn remove_album(req: HttpRequest) -> impl Responder {
+    let album_id = req.uri().path().replace("/album/", "");
+    match mysql::check_album(&album_id) {
+        Ok(false) => return HttpResponse::build(StatusCode::NOT_FOUND)
+            .body("The specified album is not found."),
+        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!"),
+        _ => {}
+    }
+    
+    match mysql::remove_album(&album_id) {
+        Ok(_) => HttpResponse::build(StatusCode::OK)
+            .body(album_id),
+        Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!")
+    }
 }
 
 #[get("/album/{album}/{file:.*}")]
