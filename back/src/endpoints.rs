@@ -2,11 +2,25 @@ use actix_web::http::StatusCode;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
+use serde::Deserialize;
 
-use crate::s3;
+use crate::{mysql, s3};
 
-#[post("/album/{album}")]
-async fn upload_image_to_album(path: web::Path<(String, )>, mut payload: Multipart) -> impl Responder {
+#[derive(Deserialize)]
+struct NewAlbumForm {
+    name: String,
+    writable: bool,
+    removable: bool
+}
+
+#[post("/album")]
+async fn upload_image_to_album(form: web::Form<NewAlbumForm>, mut payload: Multipart) -> impl Responder {
+    let album_id = match mysql::create_album(&form.name, form.writable, form.removable) {
+        Ok(album_id) => album_id,
+        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!")
+    };
+
     while let Ok(Some(mut field)) = payload.try_next().await {
         let mut body = web::BytesMut::new();
         while let Some(chunk) = field.next().await {
@@ -15,12 +29,12 @@ async fn upload_image_to_album(path: web::Path<(String, )>, mut payload: Multipa
         let filename = field.name();
 
         s3::save_file(
-            &format!("{}/{}", &path.0, filename),
+            &format!("{}/{}", &album_id, filename),
             body.to_vec()
         ).await.unwrap();
     }
 
-    HttpResponse::build(StatusCode::OK)
+    HttpResponse::build(StatusCode::OK).body(album_id)
 }
 
 #[get("/album/{album}")]

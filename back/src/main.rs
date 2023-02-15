@@ -1,4 +1,5 @@
 mod s3;
+mod mysql;
 mod endpoints;
 
 use actix_web::middleware::Logger;

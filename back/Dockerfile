@@ -21,7 +21,7 @@ WORKDIR /workdir
 COPY --from=builder /workdir/target/release/iuploader_backend .
 
 RUN apt update && \
-    apt install -y --no-install-recommends ca-certificates && \
+    apt install -y --no-install-recommends ca-certificates libmariadb-dev && \
     update-ca-certificates
 
 CMD /workdir/iuploader_backend
