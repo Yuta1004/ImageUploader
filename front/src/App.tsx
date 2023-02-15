@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import AlbumListPage from "./pages/AlbumList";
+import AlbumDetailPage from "./pages/AlbumDetail";
 
 const App = () => {
-    const [count, setCount] = useState(0);
-
-    return (<>
-        <button
-            onClick={() => setCount((count) => count+1)} 
-        >
-            Click me!
-        </button>  
-        <p>Count : { count }</p>
-    </>);
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route index         element={ <AlbumListPage/> }/>
+                <Route path="/album" element={ <AlbumDetailPage/> }/>
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;
