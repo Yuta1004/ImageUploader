@@ -8,7 +8,8 @@ const App = () => {
         <div
             style={{
                 width: "100vw",
-                height: "100vh",
+                height: "100%",
+                minHeight: "100vh",
                 background: "linear-gradient(45deg, #8bfdf3, #b884f7, #84fad6)",
                 backgroundSize: "200% 200%"
             }} 
