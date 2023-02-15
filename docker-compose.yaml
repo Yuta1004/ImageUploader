@@ -14,7 +14,7 @@ services:
       TZ: Asia/Tokyo
     depends_on:
     #   - front
-    #   - back
+      - back
       - mysql
       - minio
 
@@ -24,15 +24,15 @@ services:
   #   environment:
   #     TZ: Asia/Tokyo
 
-  # back:
-  #   build: ./back
-  #   image: iuploader/back:run
-  #   environment:
-  #     TZ: Asia/Tokyo
-  #     RUST_LOG: info
-  #     AWS_ACCESS_KEY_ID: root
-  #     AWS_SECRET_ACCESS_KEY: rootpass
-  #     AWS_REGION: ap-northeast-1
+  back:
+    build: ./back
+    image: iuploader/back:run
+    environment:
+      TZ: Asia/Tokyo
+      RUST_LOG: info
+      AWS_ACCESS_KEY_ID: root
+      AWS_SECRET_ACCESS_KEY: rootpass
+      AWS_REGION: ap-northeast-1
 
   mysql:
     image: mysql:8.0
