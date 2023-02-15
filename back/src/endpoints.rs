@@ -6,6 +6,27 @@ use serde::{Serialize, Deserialize};
 
 use crate::{mysql, s3};
 
+#[derive(Serialize)]
+struct AlbumPubInfo {
+    id: String,
+    name: String,
+    writable: bool,
+    removable: bool,
+    files: Vec<String>
+}
+
+impl AlbumPubInfo {
+    pub fn from(album: mysql::model::Album, files: Vec<String>) -> AlbumPubInfo {
+        AlbumPubInfo {
+            id: album.id,
+            name: album.name,
+            writable: album.writable,
+            removable: album.removable,
+            files
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct NewAlbumForm {
     name: String,
@@ -27,23 +48,18 @@ async fn create_album(form: web::Form<NewAlbumForm>) -> impl Responder {
 #[get("/album/{album}")]
 async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
     let album_id = req.uri().path().replace("/album/", "");
-    match mysql::check_album(&album_id) {
+    let album = match mysql::check_album(&album_id) {
+        Ok(Some(album)) => album,
         Ok(None) => return HttpResponse::build(StatusCode::NOT_FOUND)
             .body("The specified album is not found."),
         Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-            .body("Unknown Error occured!"),
-        _ => {}
-    }
+            .body("Unknown Error occured!")
+    };
 
-    let file_list = s3::get_file_list(&format!("/{}", album_id)).await.unwrap();
-    if file_list.len() > 0 {
-        HttpResponse::build(StatusCode::OK)
-            .content_type("application/json")
-            .json(file_list)   
-    } else {
-        HttpResponse::build(StatusCode::NOT_FOUND)
-            .body("The specified album is not found.")
-    }
+    let files = s3::get_file_list(&format!("/{}", album_id)).await.unwrap();
+    HttpResponse::build(StatusCode::OK)
+        .content_type("application/json")
+        .json(AlbumPubInfo::from(album, files))
 }
 
 #[put("/album/{album}")]

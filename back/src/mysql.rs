@@ -5,7 +5,7 @@ use diesel::prelude::*;
 
 const ENDPOINT: &str = "mysql://root:mysql@mysql:3306/iuploader";
 
-mod schema {
+pub mod schema {
     diesel::table! {
         albums {
             id -> Text,
@@ -18,7 +18,7 @@ mod schema {
     }
 }
 
-mod model {
+pub mod model {
     use diesel::prelude::{Queryable, Insertable};
 
     #[derive(Debug, Clone, Queryable)]
