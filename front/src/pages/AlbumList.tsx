@@ -34,31 +34,40 @@ const AlbumListPage = () => {
     }
 
     return (
-        <div
-            style={{
-                position: "relative",
-                left: "50%",
-                transform: "translate(-50%, 0%)",
-                WebkitTransform: "translate(-50%, 0%)",
-                msTransform: "translate(-50%, 0%)",
-                width: "75%",
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: "40px",
-                padding: "100px",
-            }}
-        >
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
-            { createAlbumCard() }
+        <div>
+            <Typography
+                variant="h2"
+                style={{
+                    width: "50%",
+                    margin: "0 auto",
+                    padding: "50px 0 0 0",
+                    textAlign: "center"
+                }}
+            >
+                Image Uploader
+            </Typography>
+            <div
+                style={{
+                    width: "75%",
+                    margin: "0 auto",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: "40px",
+                    padding: "75px",
+                }}
+            >
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+                { createAlbumCard() }
+            </div>
         </div>
     );
 }
