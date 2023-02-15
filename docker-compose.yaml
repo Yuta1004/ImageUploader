@@ -12,11 +12,11 @@ services:
       read_only: true
     environment:
       TZ: Asia/Tokyo
-    # depends_on:
+    depends_on:
     #   - front
     #   - back
-    #   - mysql
-    #   - minio
+      - mysql
+      - minio
 
   # front:
   #   build: ./front
