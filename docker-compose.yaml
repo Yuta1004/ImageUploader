@@ -13,16 +13,16 @@ services:
     environment:
       TZ: Asia/Tokyo
     depends_on:
-    #   - front
+      - front
       - back
       - mysql
       - minio
 
-  # front:
-  #   build: ./front
-  #   image: iuploader/front:run
-  #   environment:
-  #     TZ: Asia/Tokyo
+  front:
+    build: ./front
+    image: iuploader/front:run
+    environment:
+      TZ: Asia/Tokyo
 
   back:
     build: ./back
