@@ -49,6 +49,23 @@ fn get_album(album_id: &String) -> Result<mysql::model::Album, HttpResponse> {
     }
 }
 
+#[get("/album")]
+async fn get_all_albums() -> impl Responder {
+    match mysql::get_all_albums() {
+        Ok(albums) => {
+            let albums = albums
+                .into_iter()
+                .map(|album| AlbumPubInfo::from(album, vec![]))
+                .collect::<Vec<AlbumPubInfo>>();
+            HttpResponse::build(StatusCode::OK)
+                .content_type("application/json")
+                .json(albums)
+        },
+        Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!")
+    }
+}
+
 #[post("/album")]
 async fn create_album(form: web::Form<NewAlbumForm>) -> impl Responder {
     match mysql::create_album(&form.name, form.writable, form.removable, &form.passphrase) {

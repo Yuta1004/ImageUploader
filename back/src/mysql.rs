@@ -52,6 +52,14 @@ fn create_connection() -> Result<MysqlConnection, ConnectionError> {
     MysqlConnection::establish(ENDPOINT)
 }
 
+pub fn get_all_albums() -> Result<Vec<model::Album>, Box<dyn std::error::Error>> {
+    use schema::albums::dsl::*;
+
+    let mut conn = create_connection()?;
+    let result = albums.load::<model::Album>(&mut conn)?;
+    Ok(result)
+}
+
 pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: &String) -> Result<String, Box<dyn std::error::Error>> {
     let album_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
     let new_album = model::NewAlbum::new(&album_id, &name, writable, removable, passphrase);

@@ -11,6 +11,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(||
             App::new()
                 // /album
+                .service(endpoints::get_all_albums)
                 .service(endpoints::create_album)
 
                 // /album/{album}
