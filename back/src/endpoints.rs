@@ -35,6 +35,20 @@ struct NewAlbumForm {
     passphrase: String
 }
 
+fn get_album(album_id: &String) -> Result<mysql::model::Album, HttpResponse> {
+    match mysql::check_album(album_id) {
+        Ok(Some(album)) => Ok(album),
+        Ok(None) => Err(
+            HttpResponse::build(StatusCode::NOT_FOUND)
+                .body("The specified album is not found.")
+        ),
+        Err(_) => Err(
+            HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+                .body("Unknown Error occured!")
+        )
+    }
+}
+
 #[post("/album")]
 async fn create_album(form: web::Form<NewAlbumForm>) -> impl Responder {
     match mysql::create_album(&form.name, form.writable, form.removable, &form.passphrase) {
@@ -48,12 +62,9 @@ async fn create_album(form: web::Form<NewAlbumForm>) -> impl Responder {
 #[get("/album/{album}")]
 async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
     let album_id = req.uri().path().replace("/album/", "");
-    let album = match mysql::check_album(&album_id) {
-        Ok(Some(album)) => album,
-        Ok(None) => return HttpResponse::build(StatusCode::NOT_FOUND)
-            .body("The specified album is not found."),
-        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-            .body("Unknown Error occured!")
+    let album = match get_album(&album_id) {
+        Ok(album) => album,
+        Err(resp) => return resp
     };
 
     let files = s3::get_file_list(&format!("/{}", album_id)).await.unwrap();
@@ -65,12 +76,8 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
 #[put("/album/{album}")]
 async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
     let album_id = req.uri().path().replace("/album/", "");
-    match mysql::check_album(&album_id) {
-        Ok(None) => return HttpResponse::build(StatusCode::NOT_FOUND)
-            .body("The specified album is not found."),
-        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-            .body("Unknown Error occured!"),
-        _ => {}
+    if let Err(resp) = get_album(&album_id) {
+        return resp;
     }
 
     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -92,12 +99,8 @@ async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl
 #[delete("/album/{album}")]
 async fn remove_album(req: HttpRequest) -> impl Responder {
     let album_id = req.uri().path().replace("/album/", "");
-    match mysql::check_album(&album_id) {
-        Ok(None) => return HttpResponse::build(StatusCode::NOT_FOUND)
-            .body("The specified album is not found."),
-        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-            .body("Unknown Error occured!"),
-        _ => {}
+    if let Err(resp) = get_album(&album_id) {
+        return resp;
     }
     
     match mysql::remove_album(&album_id) {
