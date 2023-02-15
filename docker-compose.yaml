@@ -34,23 +34,23 @@ services:
   #     AWS_SECRET_ACCESS_KEY: rootpass
   #     AWS_REGION: ap-northeast-1
 
-  # mysql:
-  #   image: mysql:8.0
-  #   volumes:
-  #   - type: bind
-  #     source: ./db/mysql/sql
-  #     target: /docker-entrypoint-initdb.d
-  #     read_only: true
-  #   - type: bind
-  #     source: ./db/mysql/mysql.cnf
-  #     target: /etc/mysql/conf.d/mysql.cnf
-  #     read_only: true
-  #   - type: volume
-  #     source: mysql-v
-  #     target: /var/lib/mysql
-  #   environment:
-  #     TZ: Asia/Tokyo
-  #     MYSQL_ROOT_PASSWORD: mysql
+  mysql:
+    image: mysql:8.0
+    volumes:
+    - type: bind
+      source: ./db/mysql/sql
+      target: /docker-entrypoint-initdb.d
+      read_only: true
+    - type: bind
+      source: ./db/mysql/mysql.cnf
+      target: /etc/mysql/conf.d/mysql.cnf
+      read_only: true
+    - type: volume
+      source: mysql-v
+      target: /var/lib/mysql
+    environment:
+      TZ: Asia/Tokyo
+      MYSQL_ROOT_PASSWORD: mysql
 
   minio:
     image: minio/minio:RELEASE.2022-10-29T06-21-33Z.fips
