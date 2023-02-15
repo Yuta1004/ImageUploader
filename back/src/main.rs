@@ -20,6 +20,7 @@ async fn main() -> std::io::Result<()> {
 
                 // /album/{album}/{file}
                 .service(endpoints::get_image_in_album)
+                .service(endpoints::remove_image_in_album)
 
                 .wrap(Logger::default())
         )

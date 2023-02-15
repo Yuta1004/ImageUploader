@@ -119,3 +119,16 @@ async fn get_image_in_album(req: HttpRequest) -> impl Responder {
                 .body("The specified file is not found.")
     }
 }
+
+#[delete("/album/{album}/{file:.*}")]
+async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
+    let path = req.uri().path().replace("/album", "");
+    match s3::remove_file(&path).await {
+        Ok(_) =>
+            HttpResponse::build(StatusCode::OK)
+                .body(path),
+        Err(_) =>
+            HttpResponse::build(StatusCode::NOT_FOUND)
+                .body("The specified file is not found.")
+    }
+}
