@@ -6,9 +6,10 @@ USE iuploader;
 /* 1. アルバム情報 */
 DROP TABLE IF EXISTS albums;
 CREATE TABLE albums (
-    id          INT                     PRIMARY KEY AUTO_INCREMENT,
+    id          CHAR(8)                 PRIMARY KEY,
     `name`      VARCHAR(64) NOT NULL,
     writable    BOOLEAN     NOT NULL    DEFAULT false,
     removable   BOOLEAN     NOT NULL    DEFAULT false,
+    passphrase  VARCHAR(32) NOT NULL,
     last_update DATETIME                DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

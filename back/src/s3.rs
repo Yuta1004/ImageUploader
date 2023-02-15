@@ -24,7 +24,6 @@ pub async fn save_file(path: &str, body: Vec<u8>) -> Result<(), Box<dyn std::err
         .body(body)
         .send()
         .await?;
-
     Ok(())
 }
 
@@ -43,7 +42,6 @@ pub async fn get_file_list(path: &str) -> Result<Vec<String>, Box<dyn std::error
         .into_iter()
         .map(|obj| obj.key().unwrap().to_string())
         .collect();
-
     Ok(file_list)
 }
 
@@ -65,6 +63,15 @@ pub async fn get_file(path: &str) -> Result<(String, Bytes), Box<dyn std::error:
         .collect()
         .await?
         .into_bytes();
-
     Ok((mime, body))
+}
+
+pub async fn remove_file(path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    create_connection().await
+        .delete_object()
+        .bucket(BUCKET)
+        .key(path)
+        .send()
+        .await?;
+    Ok(())
 }
