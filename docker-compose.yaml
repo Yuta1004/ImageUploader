@@ -52,19 +52,19 @@ services:
   #     TZ: Asia/Tokyo
   #     MYSQL_ROOT_PASSWORD: mysql
 
-  # minio:
-  #   image: minio/minio:RELEASE.2022-10-29T06-21-33Z.fips
-  #   command: server --console-address ":9001" /data
-  #   ports:
-  #   - 9001:9001
-  #   environment:
-  #     TZ: Asia/Tokyo
-  #     MINIO_ROOT_USER: root
-  #     MINIO_ROOT_PASSWORD: rootpass
-  #   volumes:
-  #   - type: volume
-  #     source: minio-v
-  #     target: "/data"
+  minio:
+    image: minio/minio:RELEASE.2022-10-29T06-21-33Z.fips
+    command: server --console-address ":9001" /data
+    ports:
+    - 9001:9001
+    environment:
+      TZ: Asia/Tokyo
+      MINIO_ROOT_USER: root
+      MINIO_ROOT_PASSWORD: rootpass
+    volumes:
+    - type: volume
+      source: minio-v
+      target: "/data"
 
 volumes:
   mysql-v:
