@@ -15,7 +15,7 @@ struct NewAlbumForm {
 }
 
 #[post("/album")]
-async fn upload_image_to_album(form: web::Form<NewAlbumForm>, mut payload: Multipart) -> impl Responder {
+async fn create_album(form: web::Form<NewAlbumForm>, mut payload: Multipart) -> impl Responder {
     let album_id = match mysql::create_album(&form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => album_id,
         Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
@@ -49,6 +49,33 @@ async fn get_image_list_in_album(path: web::Path<(String,)>) -> impl Responder {
         HttpResponse::build(StatusCode::NOT_FOUND)
             .body("The specified album is not found.")
     }
+}
+
+#[post("/album/{album}")]
+async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
+    let album_id = req.uri().path().replace("/album/", "");
+    match mysql::check_album(&album_id) {
+        Ok(false) => return HttpResponse::build(StatusCode::NOT_FOUND)
+            .body("The specified album is not found."),
+        Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!"),
+        _ => {}
+    }
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let mut body = web::BytesMut::new();
+        while let Some(chunk) = field.next().await {
+            body.extend_from_slice(&chunk.unwrap())
+        }
+        let filename = field.name();
+
+        s3::save_file(
+            &format!("{}/{}", &album_id, filename),
+            body.to_vec()
+        ).await.unwrap();
+    }
+
+    HttpResponse::build(StatusCode::OK).body(album_id)
 }
 
 #[get("/album/{album}/{file:.*}")]

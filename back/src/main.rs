@@ -10,8 +10,9 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     HttpServer::new(||
             App::new()
-                .service(endpoints::upload_image_to_album)
+                .service(endpoints::create_album)
                 .service(endpoints::get_image_list_in_album)
+                .service(endpoints::upload_image_to_album)
                 .service(endpoints::get_image_in_album)
                 .wrap(Logger::default())
         )

@@ -1,13 +1,13 @@
 use rand::distributions::{Alphanumeric, DistString};
 use diesel::RunQueryDsl;
 use diesel::mysql::MysqlConnection;
-use diesel::prelude::{Connection, ConnectionError};
+use diesel::prelude::*;
 
 const ENDPOINT: &str = "mysql://root:mysql@mysql:3306/iuploader";
 
 mod schema {
     diesel::table! {
-        albums (id) {
+        albums {
             id -> Text,
             name -> Text,
             writable -> Bool,
@@ -62,4 +62,14 @@ pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: 
         .execute(&mut conn)?;
 
     Ok(album_id)
+}
+
+pub fn check_album(album_id: &String) -> Result<bool, Box<dyn std::error::Error>> {
+    use schema::albums::dsl::*;
+
+    let mut conn = create_connection()?;
+    let result = albums
+        .filter(id.eq(album_id))
+        .load::<model::Album>(&mut conn)?;
+    Ok(result.len() > 0)
 }
