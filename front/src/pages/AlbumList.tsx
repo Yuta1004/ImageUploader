@@ -6,12 +6,16 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 
 const AlbumListPage = () => {
+    const genAvatarURL = (key: string) => {
+        return "https://source.boringavatars.com/beam/150/" + key + "?square&colors=264653,2a9d8f,e9c46a,f4a261,e76f51";
+    }
+
     const createAlbumCard = () => {
         return (
             <Card>
                 <CardMedia
-                    sx={{ height: 200 }}
-                    image="https://www.tsukuba-chuko.com/wp/wp-content/uploads/2020/12/4244264_s.jpg"
+                    sx={{ height: 150 }}
+                    image={ genAvatarURL("ABCDEFGH") }
                 />
                 <CardContent>
                     <Typography gutterBottom variant="h5" component="div">
@@ -27,7 +31,7 @@ const AlbumListPage = () => {
                 </CardContent>
             </Card>
         );
-    };
+    }
 
     return (
         <div
