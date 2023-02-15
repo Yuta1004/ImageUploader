@@ -10,5 +10,6 @@ CREATE TABLE albums (
     `name`      VARCHAR(64) NOT NULL,
     writable    BOOLEAN     NOT NULL    DEFAULT false,
     removable   BOOLEAN     NOT NULL    DEFAULT false,
+    passphrase  VARCHAR(32) NOT NULL,
     last_update DATETIME                DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

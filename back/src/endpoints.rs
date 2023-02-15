@@ -10,12 +10,13 @@ use crate::{mysql, s3};
 struct NewAlbumForm {
     name: String,
     writable: bool,
-    removable: bool
+    removable: bool,
+    passphrase: String
 }
 
 #[post("/album")]
 async fn upload_image_to_album(form: web::Form<NewAlbumForm>, mut payload: Multipart) -> impl Responder {
-    let album_id = match mysql::create_album(&form.name, form.writable, form.removable) {
+    let album_id = match mysql::create_album(&form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => album_id,
         Err(_) => return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
             .body("Unknown Error occured!")

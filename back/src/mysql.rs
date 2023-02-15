@@ -12,6 +12,7 @@ mod schema {
             name -> Text,
             writable -> Bool,
             removable -> Bool,
+            passphrase -> Text,
             last_update -> Text,
         }
     }
@@ -26,6 +27,7 @@ mod model {
         pub name: String,
         pub writable: bool,
         pub removable: bool,
+        pub passphrase: String,
         pub last_update: String
     }
 
@@ -35,12 +37,13 @@ mod model {
         pub id: &'a String,
         pub name: &'a String,
         pub writable: bool,
-        pub removable: bool
+        pub removable: bool,
+        pub passphrase: &'a String
     }
 
     impl<'a> NewAlbum<'a> {
-        pub fn new(id: &'a String, name: &'a String, writable: bool, removable: bool) -> NewAlbum<'a> {
-            NewAlbum { id, name, writable, removable }
+        pub fn new(id: &'a String, name: &'a String, writable: bool, removable: bool, passphrase: &'a String) -> NewAlbum<'a> {
+            NewAlbum { id, name, writable, removable, passphrase }
         }
     }
 }
@@ -49,11 +52,11 @@ fn create_connection() -> Result<MysqlConnection, ConnectionError> {
     MysqlConnection::establish(ENDPOINT)
 }
 
-pub fn create_album(name: &String, writable: bool, removable: bool) -> Result<String, Box<dyn std::error::Error>> {
+pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: &String) -> Result<String, Box<dyn std::error::Error>> {
     let mut conn = create_connection()?;
 
     let album_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
-    let new_album = model::NewAlbum::new(&album_id, &name, writable, removable);
+    let new_album = model::NewAlbum::new(&album_id, &name, writable, removable, passphrase);
     diesel::insert_into(schema::albums::dsl::albums)
         .values(&new_album)
         .execute(&mut conn)?;
