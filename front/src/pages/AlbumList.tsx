@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Card from "@mui/material/Card";
@@ -10,11 +10,19 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 
 import Album from "../model/Album";
+import MsgViewer from "../components/MsgViewer";
+
+type SContextType<T> = [T, React.Dispatch<React.SetStateAction<T>>];
+
+// メッセージ表示用Context
+export const MsgContext = createContext({} as SContextType<[string, string]>);
 
 const AlbumListPage = () => {
     const navigate = useNavigate();
 
     const [albums, setAlbums] = useState<Album[]>([]);
+
+    const [msg, showMsg] = useState<[string, string]>(["", ""]);
 
     const genAvatarURL = (key: string) => {
         return "https://source.boringavatars.com/beam/150/" + key + "?square&colors=264653,2a9d8f,e9c46a,f4a261,e76f51";
@@ -54,7 +62,7 @@ const AlbumListPage = () => {
                 setAlbums(data);
             })())
             .catch(() => {
-                console.log("error!");
+                showMsg(["error", "アルバム情報の取得に失敗しました"])
             });
     }, []);
 
@@ -83,6 +91,9 @@ const AlbumListPage = () => {
             >
                 { albums.map((album) => createAlbumCard(album)) }
             </div>
+            <MsgContext.Provider value={[ msg, showMsg ]}>
+                <MsgViewer/>
+            </MsgContext.Provider>
         </div>
     );
 }
