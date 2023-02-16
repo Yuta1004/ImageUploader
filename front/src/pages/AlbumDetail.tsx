@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useLocation } from "react-router-dom";
 
 import Card from "@mui/material/Card";
@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import Dialog from "@mui/material/Dialog";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
+import { MsgContext } from "../App";
 import Album from "../model/Album";
 
 const AlbumDetailPage = () => {
@@ -21,6 +22,8 @@ const AlbumDetailPage = () => {
 
     const [showImgStat, setShowImgStat] = useState(false);
     const [showImgURL, setShowImgURL] = useState("");
+
+    const [_, showMsg] = useContext(MsgContext);
 
     useEffect(() => {
         const query = new URLSearchParams(location.search);   
@@ -36,8 +39,7 @@ const AlbumDetailPage = () => {
                     setAlbum(response.data);
                 })())
                 .catch(() => {
-                    // showMsg(["error", "アルバム情報の取得に失敗しました"])
-                    console.log("error!")
+                    showMsg(["error", "アルバム情報の取得に失敗しました"]);
                 });
         }
     }, [albumId]);

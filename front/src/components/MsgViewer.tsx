@@ -3,7 +3,7 @@ import { useContext } from "react";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
-import { MsgContext } from "../pages/AlbumList";
+import { MsgContext } from "../App";
 
 const MsgViewer = () => {
     const [[type, msg], showMsg] = useContext(MsgContext);
