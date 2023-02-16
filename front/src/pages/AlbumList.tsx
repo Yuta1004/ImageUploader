@@ -56,10 +56,7 @@ const AlbumListPage = () => {
         axios
             .get("/back/album")
             .then(response => (async () => {
-                console.log(JSON.stringify(response.data));
-                const data: Album[] = response.data;
-                console.log(JSON.stringify(data));
-                setAlbums(data);
+                setAlbums(response.data);
             })())
             .catch(() => {
                 showMsg(["error", "アルバム情報の取得に失敗しました"])
