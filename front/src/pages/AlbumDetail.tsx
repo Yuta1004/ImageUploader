@@ -80,6 +80,8 @@ const AlbumDetailPage = () => {
             elevation={ 12 }
             sx={{
                 width: "75%",
+                minHeight: "100vh",
+                height: "100%",
                 margin: "0 auto",
                 padding: "50px",
                 background: "rgba(255, 255, 255, 0.8)"
