@@ -1,3 +1,5 @@
+import axios from "axios";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Card from "@mui/material/Card";
@@ -7,37 +9,54 @@ import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 
+import Album from "../model/Album";
+
 const AlbumListPage = () => {
     const navigate = useNavigate();
+
+    const [albums, setAlbums] = useState<Album[]>([]);
 
     const genAvatarURL = (key: string) => {
         return "https://source.boringavatars.com/beam/150/" + key + "?square&colors=264653,2a9d8f,e9c46a,f4a261,e76f51";
     }
 
-    const createAlbumCard = () => {
+    const createAlbumCard = (album: Album) => {
         return (
             <Card
-                onClick={() => navigate("/album?id=aaa")} 
+                onClick={() => navigate("/album?id=" + album.id)} 
             >
                 <CardMedia
                     sx={{ height: 150 }}
-                    image={ genAvatarURL("ABCDEFGH") }
+                    image={ genAvatarURL(album.id) }
                 />
                 <CardContent>
                     <Typography gutterBottom variant="h5" component="div">
-                        アルバムタイトル
+                        { album.name }
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         最終更新 : xxxx/xx/xx xx:xx
                     </Typography>
                     <Stack direction="row" spacing={1} style={{ margin: "15px 0 0 0" }}>
-                        <Chip label="編集可能" color="success" variant="outlined" />
-                        <Chip label="合言葉が必要です" color="info" variant="outlined" />
+                        { album.writable || album.removable ? <Chip label="編集可能" color="success" variant="outlined" /> : <></> }
                     </Stack>
                 </CardContent>
             </Card>
         );
     }
+
+    useEffect(() => {
+        axios
+            .get("/back/album")
+            .then(response => (async () => {
+                console.log(JSON.stringify(response.data));
+                const data: Album[] = response.data;
+                console.log(JSON.stringify(data));
+                setAlbums(data);
+            })())
+            .catch(() => {
+                console.log("error!");
+            });
+    }, []);
 
     return (
         <div>
@@ -62,17 +81,7 @@ const AlbumListPage = () => {
                     padding: "75px",
                 }}
             >
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
-                { createAlbumCard() }
+                { albums.map((album) => createAlbumCard(album)) }
             </div>
         </div>
     );
