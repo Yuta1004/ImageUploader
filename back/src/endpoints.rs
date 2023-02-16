@@ -12,7 +12,8 @@ struct AlbumPubInfo {
     name: String,
     writable: bool,
     removable: bool,
-    files: Vec<String>
+    last_update: String,
+    files: Vec<String>,
 }
 
 impl AlbumPubInfo {
@@ -22,6 +23,7 @@ impl AlbumPubInfo {
             name: album.name,
             writable: album.writable,
             removable: album.removable,
+            last_update: album.last_update,
             files
         }
     }

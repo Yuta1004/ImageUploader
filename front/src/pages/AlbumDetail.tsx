@@ -109,7 +109,7 @@ const AlbumDetailPage = () => {
                     textAlign: "center"
                 }}
             >
-                最終更新 : xxxx/xx/xx
+                最終更新 : { album !== null && album.last_update }
             </Typography>
             <div
                 style={{

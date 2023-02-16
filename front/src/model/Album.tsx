@@ -3,6 +3,7 @@ interface Album {
     name: string,
     writable: boolean,
     removable: boolean,
+    last_update: string,
     files: string[]
 }
 

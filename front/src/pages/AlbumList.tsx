@@ -37,7 +37,7 @@ const AlbumListPage = () => {
                         { album.name }
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        最終更新 : xxxx/xx/xx xx:xx
+                        最終更新 : { album.last_update }
                     </Typography>
                     <Stack direction="row" spacing={1} style={{ margin: "15px 0 0 0" }}>
                         { album.writable || album.removable ? <Chip label="編集可能" color="success" variant="outlined" /> : <></> }
