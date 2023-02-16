@@ -1,4 +1,6 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
@@ -10,11 +12,12 @@ import Stack from "@mui/material/Stack";
 import Dialog from "@mui/material/Dialog";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
-import { useLocation } from "react-router-dom";
+import Album from "../model/Album";
 
 const AlbumDetailPage = () => {
     const location = useLocation();
     const [albumId, setAlbumId] = useState("");
+    const [album, setAlbum] = useState<Album | null>(null);
 
     const [showImgStat, setShowImgStat] = useState(false);
     const [showImgURL, setShowImgURL] = useState("");
@@ -25,17 +28,31 @@ const AlbumDetailPage = () => {
         setAlbumId(_albumId === null ? "" : _albumId);
     }, []);
 
-    const createImageCard = () => {
+    useEffect(() => {
+        if (albumId !== "") {
+            axios
+                .get("/back/album/"+albumId)
+                .then(response => (async () => {
+                    setAlbum(response.data);
+                })())
+                .catch(() => {
+                    // showMsg(["error", "アルバム情報の取得に失敗しました"])
+                    console.log("error!")
+                });
+        }
+    }, [albumId]);
+
+    const createImageCard = (fileURL: string) => {
         return (
             <Card
                 onClick={() => {
                     setShowImgStat(true);
-                    setShowImgURL("https://www.tsukuba-chuko.com/wp/wp-content/uploads/2020/12/4244264_s.jpg");
+                    setShowImgURL("/back/album/"+fileURL);
                 }} 
             >
                 <CardMedia
                     sx={{ height: 150 }}
-                    image="https://www.tsukuba-chuko.com/wp/wp-content/uploads/2020/12/4244264_s.jpg"
+                    image={ "/back/album/"+fileURL }
                 />
                 <CardContent style={{ padding: "10px" }}>
                     <Stack
@@ -47,7 +64,7 @@ const AlbumDetailPage = () => {
                         }}
                     >
                         <Typography variant="body2" color="text.secondary">
-                            aaa.png
+                            { fileURL.split("/").slice(-1) }
                         </Typography>
                         <IconButton color="secondary" size="small">
                             <DeleteOutlineIcon/>
@@ -77,7 +94,7 @@ const AlbumDetailPage = () => {
                     textAlign: "center"
                 }}
             >
-                { albumId }
+                { album !== null && album.name }
             </Typography>
             <Typography
                 variant="h6"
@@ -100,17 +117,7 @@ const AlbumDetailPage = () => {
                     padding: "75px 0 75px 0",
                 }}
             >
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
-                { createImageCard() }
+                { album !== null && album.files.map((fileURL) => createImageCard(fileURL)) }
             </div>
             <Dialog
                 onClose={() => setShowImgStat(false)}
