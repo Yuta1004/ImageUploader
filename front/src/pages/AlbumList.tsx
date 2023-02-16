@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
 import CardContent from "@mui/material/CardContent";
@@ -6,13 +8,17 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 
 const AlbumListPage = () => {
+    const navigate = useNavigate();
+
     const genAvatarURL = (key: string) => {
         return "https://source.boringavatars.com/beam/150/" + key + "?square&colors=264653,2a9d8f,e9c46a,f4a261,e76f51";
     }
 
     const createAlbumCard = () => {
         return (
-            <Card>
+            <Card
+                onClick={() => navigate("/album?id=aaa")} 
+            >
                 <CardMedia
                     sx={{ height: 150 }}
                     image={ genAvatarURL("ABCDEFGH") }

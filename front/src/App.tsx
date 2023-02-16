@@ -1,9 +1,12 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation, NavLink } from "react-router-dom";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
 
 import AlbumListPage from "./pages/AlbumList";
 import AlbumDetailPage from "./pages/AlbumDetail";
 
 const App = () => {
+    const location = useLocation();
+
     return (
         <div
             style={{
@@ -14,12 +17,18 @@ const App = () => {
                 backgroundSize: "200% 200%"
             }} 
         >
-            <BrowserRouter>
-                <Routes>
-                    <Route index         element={ <AlbumListPage/> }/>
-                    <Route path="/album" element={ <AlbumDetailPage/> }/>
-                </Routes>
-            </BrowserRouter>
+            <TransitionGroup>
+                <CSSTransition
+                    key={ location.pathname + location.key }
+                    classNames="fade"
+                    timeout={400}
+                >
+                    <Routes location={ location }>
+                        <Route index         element={ <AlbumListPage/> }/>
+                        <Route path="/album" element={ <AlbumDetailPage/> }/>
+                    </Routes>
+                </CSSTransition>
+            </TransitionGroup>
         </div>
     );
 }
