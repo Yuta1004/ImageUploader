@@ -131,7 +131,7 @@ const AlbumDetailPage = () => {
         axios
             .post("/back/album/"+album?.id, albumInfo, { headers })
             .then(_ => (async () => {
-                window.location.reload();
+                loadImages(albumId);
             })())
             .catch((err) => {
                 showMsg(["error", "アルバム情報更新に失敗しました : " + err]);
