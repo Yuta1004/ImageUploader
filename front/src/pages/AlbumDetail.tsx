@@ -133,8 +133,8 @@ const AlbumDetailPage = () => {
             .then(_ => (async () => {
                 loadImages(albumId);
             })())
-            .catch((err) => {
-                showMsg(["error", "アルバム情報更新に失敗しました : " + err]);
+            .catch((_) => {
+                showMsg(["error", "アルバム情報更新に失敗しました"]);
             })
     }
 
