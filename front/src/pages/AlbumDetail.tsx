@@ -56,15 +56,14 @@ const AlbumDetailPage = () => {
 
     const createImageCard = (fileURL: string) => {
         return (
-            <Card
-                onClick={() => {
-                    setShowImgStat(true);
-                    setShowImgURL("/back/album/"+fileURL);
-                }} 
-            >
+            <Card>
                 <CardMedia
                     sx={{ height: 150 }}
                     image={ "/back/album/"+fileURL }
+                    onClick={() => {
+                        setShowImgStat(true);
+                        setShowImgURL("/back/album/"+fileURL);
+                    }}
                 />
                 <CardContent style={{ padding: "10px" }}>
                     <Stack
