@@ -3,6 +3,8 @@ import { useState, useEffect, useContext, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useCookies } from "react-cookie";
 
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
 import CardContent from "@mui/material/CardContent";
@@ -18,6 +20,8 @@ import Album from "../model/Album";
 
 const AlbumDetailPage = () => {
     const [cookies, setCookies] = useCookies(["IU-Passphrase"]);
+
+    const [authStat, setAuthStat] = useState(true);
 
     const location = useLocation();
     const [albumId, setAlbumId] = useState("");
@@ -41,10 +45,11 @@ const AlbumDetailPage = () => {
             axios
                 .get("/back/album/"+albumId, { withCredentials: true })
                 .then(response => (async () => {
+                    setAuthStat(true);
                     setAlbum(response.data);
                 })())
                 .catch(() => {
-                    showMsg(["error", "アルバム情報の取得に失敗しました"]);
+                    setAuthStat(false);
                 });
         }
     }, [albumId]);
@@ -94,46 +99,61 @@ const AlbumDetailPage = () => {
                 background: "rgba(255, 255, 255, 0.8)"
             }}
         >
-            <Typography
-                variant="h2"
-                style={{
-                    width: "50%",
-                    margin: "0 auto",
-                    padding: "50px 0 0 0",
-                    textAlign: "center"
-                }}
-            >
-                { album !== null && album.name }
-            </Typography>
-            <Typography
-                variant="h6"
-                style={{
-                    width: "50%",
-                    margin: "0 auto",
-                    padding: "10px 0 0 0",
-                    textAlign: "center"
-                }}
-            >
-                最終更新 : { album !== null && album.last_update }
-            </Typography>
-            <div
-                style={{
-                    width: "100%",
-                    margin: "0 auto",
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                    gap: "20px",
-                    padding: "75px 0 75px 0",
-                }}
-            >
-                { album !== null && album.files.map((fileURL) => createImageCard(fileURL)) }
+            <div style={{ display: authStat ? "none" : "inline" }}>
+                <Alert
+                    severity="error"
+                    sx={{
+                        width: "50%",
+                        margin: "0 auto"
+                    }}
+                >
+                    <AlertTitle>認証エラー</AlertTitle>
+                    このアルバムを閲覧することができません！<br/>
+                    <strong>合言葉</strong>を確認してください
+                </Alert>
             </div>
-            <Dialog
-                onClose={() => setShowImgStat(false)}
-                open={ showImgStat }
-            >
-                <img src={ showImgURL }/>
-            </Dialog>
+            <div style={{ display: authStat ? "inline" : "none" }}>
+                <Typography
+                    variant="h2"
+                    style={{
+                        width: "50%",
+                        margin: "0 auto",
+                        padding: "50px 0 0 0",
+                        textAlign: "center"
+                    }}
+                >
+                    { album !== null && album.name }
+                </Typography>
+                <Typography
+                    variant="h6"
+                    style={{
+                        width: "50%",
+                        margin: "0 auto",
+                        padding: "10px 0 0 0",
+                        textAlign: "center"
+                    }}
+                >
+                    { album !== null && "最終更新 : " + album.last_update }
+                </Typography>
+                <div
+                    style={{
+                        width: "100%",
+                        margin: "0 auto",
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                        gap: "20px",
+                        padding: "75px 0 75px 0",
+                    }}
+                >
+                    { album !== null && album.files.map((fileURL) => createImageCard(fileURL)) }
+                </div>
+                <Dialog
+                    onClose={() => setShowImgStat(false)}
+                    open={ showImgStat }
+                >
+                    <img src={ showImgURL }/>
+                </Dialog>
+            </div>
         </Paper>
     );
 }
