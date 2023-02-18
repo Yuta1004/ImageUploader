@@ -14,12 +14,15 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Dialog from "@mui/material/Dialog";
 import Button from "@mui/material/Button";
+import Fab from "@mui/material/Fab";
+import EditIcon from "@mui/icons-material/Edit";
 import CircularProgress from "@mui/material/CircularProgress";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { MuiFileInput } from "mui-file-input";
 
-import { MsgContext } from "../App";
+import { MsgContext, AlbumSettingsDialogContext } from "../App";
 import Album from "../model/Album";
+import AlbumSettingsDialog, { AlbumSettingsDialogValues } from "../components/AlbumSettingsDialog";
 
 const AlbumDetailPage = () => {
     const [cookies, setCookies] = useCookies(["IU-Passphrase"]);
@@ -38,6 +41,8 @@ const AlbumDetailPage = () => {
     const [nowLoading, setLoadingStat] = useState(false);
 
     const [_, showMsg] = useContext(MsgContext);
+
+    const [__, showAlbumSettingsDialog] = useContext(AlbumSettingsDialogContext);
 
     const loadImages = (albumId: string) => {
         if (albumId !== "") {
@@ -109,6 +114,29 @@ const AlbumDetailPage = () => {
                 });
         }
     };
+
+    const updateAlbum = (values: AlbumSettingsDialogValues) => {
+        const adminPassword = window.prompt("管理者パスワードを入力してください");
+
+        const albumInfo = new URLSearchParams();
+        albumInfo.append("name", values.name);
+        albumInfo.append("passphrase", values.passphrase);
+        albumInfo.append("writable", values.writable ? "true" : "false");
+        albumInfo.append("removable", values.removable ? "true" : "false");
+
+        const headers = {
+            "IU-AdminPassword": adminPassword,
+            "content-type": "application/x-www-form-urlencoded"
+        };
+        // axios
+        //     .post("/back/album", albumInfo, { headers })
+        //     .then(_ => (async () => {
+        //         window.location.reload();
+        //     })())
+        //     .catch((err) => {
+        //         showMsg(["error", "アルバム情報更新に失敗しました : " + err]);
+        //     })
+    }
 
     const createImageCard = (fileURL: string) => {
         return (
@@ -192,10 +220,20 @@ const AlbumDetailPage = () => {
                         width: "50%",
                         margin: "0 auto",
                         padding: "50px 0 0 0",
-                        textAlign: "center"
+                        textAlign: "center",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center"
                     }}
                 >
                     { album !== null && album.name }
+                <Fab
+                    size="small"
+                    color="primary"
+                    onClick={() => showAlbumSettingsDialog(true)}
+                >
+                    <EditIcon />
+                </Fab>
                 </Typography>
                 <Typography
                     variant="h6"
@@ -260,7 +298,12 @@ const AlbumDetailPage = () => {
                         display: nowLoading ? "inline" : "none"
                     }}
                 />
-            </div>
+            </div> 
+            <AlbumSettingsDialog
+                initValues={{ ...album!, passphrase: "" }}
+                submitText="更新"
+                onSubmit={(values) => updateAlbum(values)}
+            />
         </Paper>
     );
 }
