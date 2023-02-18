@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import Fab from "@mui/material/Fab";
+import CircularProgress from "@mui/material/CircularProgress";
 import AddIcon from "@mui/icons-material/Add";
 
 import { MsgContext, AlbumSettingsDialogContext } from "../App";
@@ -20,11 +21,14 @@ const AlbumListPage = () => {
 
     const [albums, setAlbums] = useState<Album[]>([]);
 
+    const [nowLoading, setLoadingStat] = useState(false);
+
     const [_, showMsg] = useContext(MsgContext);
 
     const [__, showAlbumSettingsDialog] = useContext(AlbumSettingsDialogContext);
 
     const getAlbums = () => {
+        setLoadingStat(true);
         axios
             .get("/back/album")
             .then(response => (async () => {
@@ -32,6 +36,9 @@ const AlbumListPage = () => {
             })())
             .catch(() => {
                 showMsg(["error", "アルバム情報の取得に失敗しました"])
+            })
+            .finally(() => {
+                setLoadingStat(false);     
             });
     }
 
@@ -126,6 +133,18 @@ const AlbumListPage = () => {
                 initValues={null}
                 submitText="作成"
                 onSubmit={(values) => createAlbum(values)}
+            />
+            <CircularProgress
+                size={80}
+                style={{
+                    position: "fixed",
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    margin: "auto",
+                    display: nowLoading ? "inline" : "none",
+                }}
             />
         </div>
     );
