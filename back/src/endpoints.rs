@@ -37,8 +37,8 @@ struct NewAlbumForm {
     passphrase: String
 }
 
-fn get_album(album_id: &String, passphrase: &str) -> Result<mysql::model::Album, HttpResponse> {
-    let album = match mysql::check_album(album_id) {
+fn get_album(album_id: &str, passphrase: &str) -> Result<mysql::model::Album, HttpResponse> {
+    let album = match mysql::check_album(&album_id.to_string()) {
         Ok(Some(album)) => album,
         Ok(None) => return Err(
             HttpResponse::build(StatusCode::NOT_FOUND)
@@ -94,7 +94,7 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
             .body("Passphrase is not given.")
     };
 
-    let album_id = req.uri().path().replace("/album/", "");    
+    let album_id = req.match_info().get("album").unwrap();
     let album = match get_album(&album_id, passphrase) {
         Ok(album) => album,
         Err(resp) => return resp
@@ -114,7 +114,7 @@ async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl
             .body("Passphrase is not given.")
     };
 
-    let album_id = req.uri().path().replace("/album/", "");
+    let album_id = req.match_info().get("album").unwrap().to_owned();
     match get_album(&album_id, passphrase) {
         Ok(album) => if !album.writable {
             return HttpResponse::build(StatusCode::UNAUTHORIZED)
@@ -147,7 +147,7 @@ async fn remove_album(req: HttpRequest) -> impl Responder {
             .body("Passphrase is not given.")
     };
 
-    let album_id = req.uri().path().replace("/album/", "");
+    let album_id = req.match_info().get("album").unwrap().to_owned();
     match get_album(&album_id, passphrase) {
         Ok(album) => if !album.removable {
             return HttpResponse::build(StatusCode::UNAUTHORIZED)
