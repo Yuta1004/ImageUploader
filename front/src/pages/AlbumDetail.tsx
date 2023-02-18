@@ -32,16 +32,8 @@ const AlbumDetailPage = () => {
 
     const [_, showMsg] = useContext(MsgContext);
 
-    useEffect(() => {
-        const query = new URLSearchParams(location.search);   
-        const _albumId = query.get("id");
-        setAlbumId(_albumId === null ? "" : _albumId);
-    }, []);
-
-    useEffect(() => {
+    const loadImages = (albumId: string) => {
         if (albumId !== "") {
-            const passphrase = window.prompt("合言葉を入力してください", "");
-            setCookies("IU-Passphrase", passphrase);
             axios
                 .get("/back/album/"+albumId, { withCredentials: true })
                 .then(response => (async () => {
@@ -52,17 +44,40 @@ const AlbumDetailPage = () => {
                     setAuthStat(false);
                 });
         }
-    }, [albumId]);
+    };
+
+    const removeImage = (fileURL: string) => {
+        if (window.confirm("本当に削除しても良いですか？ （この操作は取り消せません）")) {
+            axios
+                .delete(fileURL, { withCredentials: true })
+                .then(_ => (async () => {
+                    loadImages(albumId);
+                })())
+                .catch(() => {
+                    setAuthStat(false);
+                });
+        }
+    };
+
+    useEffect(() => {
+        const passphrase = window.prompt("合言葉を入力してください", "");
+        setCookies("IU-Passphrase", passphrase);
+
+        const query = new URLSearchParams(location.search);   
+        const _albumId = query.get("id") === null ? "" : query.get("id")!;
+        setAlbumId(_albumId);
+        loadImages(_albumId);
+    }, []);
 
     const createImageCard = (fileURL: string) => {
         return (
             <Card>
                 <CardMedia
                     sx={{ height: 150 }}
-                    image={ "/back/album/"+fileURL }
+                    image={ fileURL }
                     onClick={() => {
                         setShowImgStat(true);
-                        setShowImgURL("/back/album/"+fileURL);
+                        setShowImgURL(fileURL);
                     }}
                 />
                 <CardContent style={{ padding: "10px" }}>
@@ -74,10 +89,18 @@ const AlbumDetailPage = () => {
                             alignItems: "center"
                         }}
                     >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                        >
                             { fileURL.split("/").slice(-1) }
                         </Typography>
-                        <IconButton color="secondary" size="small">
+                        <IconButton
+                            color="secondary"
+                            size="small"
+                            onClick={() => { removeImage(fileURL) }}
+                            sx={{ display: album?.removable ? "inline" : "none" }}
+                        >
                             <DeleteOutlineIcon/>
                         </IconButton>
                     </Stack>
@@ -144,7 +167,7 @@ const AlbumDetailPage = () => {
                         padding: "75px 0 75px 0",
                     }}
                 >
-                    { album !== null && album.files.map((fileURL) => createImageCard(fileURL)) }
+                    { album !== null && album.files.map((fileURL) => createImageCard("/back/album/" + fileURL)) }
                 </div>
                 <Dialog
                     onClose={() => setShowImgStat(false)}
