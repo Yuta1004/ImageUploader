@@ -1,4 +1,5 @@
 use actix_web::http::StatusCode;
+use actix_web::cookie::Cookie;
 use actix_web::{get, post, put, delete, web, HttpRequest, HttpResponse, Responder};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
@@ -37,7 +38,8 @@ struct NewAlbumForm {
     passphrase: String
 }
 
-fn get_album(album_id: &str, passphrase: &str) -> Result<mysql::model::Album, HttpResponse> {
+fn get_album(req: &HttpRequest) -> Result<mysql::model::Album, HttpResponse> {
+    let album_id = req.match_info().get("album").unwrap();
     let album = match mysql::check_album(&album_id.to_string()) {
         Ok(Some(album)) => album,
         Ok(None) => return Err(
@@ -50,7 +52,31 @@ fn get_album(album_id: &str, passphrase: &str) -> Result<mysql::model::Album, Ht
         )
     };
 
-    if &album.passphrase == passphrase {
+    let passphrase = match req.headers().get("cookie") {
+        Some(cookies) => {
+            let passphrase = cookies.to_str().unwrap().split(";").find_map(|cookie| {
+                let cookie = Cookie::parse(cookie).unwrap();
+                if cookie.name() == "IU-Passphrase" {
+                    Some(cookie.value().to_string())
+                } else {
+                    None 
+                }
+            });
+            match passphrase {
+                Some(passphrase) => passphrase,
+                None => return Err(
+                    HttpResponse::build(StatusCode::BAD_REQUEST)
+                        .body("Passphrase is not given.")
+                )
+            }
+        },
+        None => return Err(
+            HttpResponse::build(StatusCode::BAD_REQUEST)
+                .body("Passphrase is not given.")
+        )
+    };
+
+    if album.passphrase == passphrase {
         Ok(album)
     } else {
         Err(HttpResponse::build(StatusCode::UNAUTHORIZED)
@@ -88,19 +114,12 @@ async fn create_album(form: web::Form<NewAlbumForm>) -> impl Responder {
 
 #[get("/album/{album}")]
 async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
-    let passphrase = match req.headers().get("IU-Passphrase") {
-        Some(passphrase) => passphrase.to_str().unwrap(),
-        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
-            .body("Passphrase is not given.")
-    };
-
-    let album_id = req.match_info().get("album").unwrap();
-    let album = match get_album(&album_id, passphrase) {
+    let album = match get_album(&req) {
         Ok(album) => album,
         Err(resp) => return resp
     };
 
-    let files = s3::get_file_list(&format!("/{}", album_id)).await.unwrap();
+    let files = s3::get_file_list(&format!("/{}", album.id)).await.unwrap();
     HttpResponse::build(StatusCode::OK)
         .content_type("application/json")
         .json(AlbumPubInfo::from(album, files))
@@ -108,17 +127,12 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
 
 #[put("/album/{album}")]
 async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
-    let passphrase = match req.headers().get("IU-Passphrase") {
-        Some(passphrase) => passphrase.to_str().unwrap(),
-        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
-            .body("Passphrase is not given.")
-    };
-
-    let album_id = req.match_info().get("album").unwrap().to_owned();
-    match get_album(&album_id, passphrase) {
+    let album = match get_album(&req) {
         Ok(album) => if !album.writable {
             return HttpResponse::build(StatusCode::UNAUTHORIZED)
                 .body("Not allowed to put images to this album.")
+        } else {
+            album
         },
         Err(resp) => return resp
     };
@@ -131,34 +145,29 @@ async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl
         let filename = field.name();
 
         s3::save_file(
-            &format!("{}/{}", &album_id, filename),
+            &format!("{}/{}", &album.id, filename),
             body.to_vec()
         ).await.unwrap();
     }
 
-    HttpResponse::build(StatusCode::OK).body(album_id)
+    HttpResponse::build(StatusCode::OK).body(album.id)
 }
 
 #[delete("/album/{album}")]
 async fn remove_album(req: HttpRequest) -> impl Responder {
-    let passphrase = match req.headers().get("IU-Passphrase") {
-        Some(passphrase) => passphrase.to_str().unwrap(),
-        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
-            .body("Passphrase is not given.")
-    };
-
-    let album_id = req.match_info().get("album").unwrap().to_owned();
-    match get_album(&album_id, passphrase) {
+    let album = match get_album(&req) {
         Ok(album) => if !album.removable {
             return HttpResponse::build(StatusCode::UNAUTHORIZED)
                 .body("Not allowed to remove a image in this album.")
+        } else {
+            album
         },
         Err(resp) => return resp
     };
 
-    match mysql::remove_album(&album_id) {
+    match mysql::remove_album(&album.id) {
         Ok(_) => HttpResponse::build(StatusCode::OK)
-            .body(album_id),
+            .body(album.id),
         Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
             .body("Unknown Error occured!")
     }
@@ -166,14 +175,7 @@ async fn remove_album(req: HttpRequest) -> impl Responder {
 
 #[get("/album/{album}/{file:.*}")]
 async fn get_image_in_album(req: HttpRequest) -> impl Responder {
-    let passphrase = match req.headers().get("IU-Passphrase") {
-        Some(passphrase) => passphrase.to_str().unwrap(),
-        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
-            .body("Passphrase is not given.")
-    };
-
-    let album_id = req.match_info().get("album").unwrap();
-    if let Err(resp) = get_album(album_id, passphrase) {
+    if let Err(resp) = get_album(&req) {
         return resp;
     }
 
@@ -191,14 +193,7 @@ async fn get_image_in_album(req: HttpRequest) -> impl Responder {
 
 #[delete("/album/{album}/{file:.*}")]
 async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
-    let passphrase = match req.headers().get("IU-Passphrase") {
-        Some(passphrase) => passphrase.to_str().unwrap(),
-        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
-            .body("Passphrase is not given.")
-    };
-
-    let album_id = req.match_info().get("album").unwrap();
-    if let Err(resp) = get_album(album_id, passphrase) {
+    if let Err(resp) = get_album(&req) {
         return resp;
     }
 
