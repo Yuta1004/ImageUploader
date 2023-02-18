@@ -8,9 +8,12 @@ import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
+import Fab from "@mui/material/Fab";
+import AddIcon from "@mui/icons-material/Add";
 
-import { MsgContext } from "../App";
+import { MsgContext, AlbumSettingsDialogContext } from "../App";
 import Album from "../model/Album";
+import AlbumSettingsDialog, { AlbumSettingsDialogValues } from "../components/AlbumSettingsDialog";
 
 const AlbumListPage = () => {
     const navigate = useNavigate();
@@ -18,6 +21,42 @@ const AlbumListPage = () => {
     const [albums, setAlbums] = useState<Album[]>([]);
 
     const [_, showMsg] = useContext(MsgContext);
+
+    const [__, showAlbumSettingsDialog] = useContext(AlbumSettingsDialogContext);
+
+    const getAlbums = () => {
+        axios
+            .get("/back/album")
+            .then(response => (async () => {
+                setAlbums(response.data);
+            })())
+            .catch(() => {
+                showMsg(["error", "アルバム情報の取得に失敗しました"])
+            });
+    }
+
+    const createAlbum = (values: AlbumSettingsDialogValues) => {
+        const adminPassword = window.prompt("管理者パスワードを入力してください");
+
+        const albumInfo = new URLSearchParams();
+        albumInfo.append("name", values.name);
+        albumInfo.append("passphrase", values.passphrase);
+        albumInfo.append("writable", values.writable ? "true" : "false");
+        albumInfo.append("removable", values.removable ? "true" : "false");
+
+        const headers = {
+            "IU-AdminPassword": adminPassword,
+            "content-type": "application/x-www-form-urlencoded"
+        };
+        axios
+            .post("/back/album", albumInfo, { headers })
+            .then(_ => (async () => {
+                getAlbums();
+            })())
+            .catch((err) => {
+                showMsg(["error", "アルバム作成に失敗しました : " + err]);
+            })
+    }
 
     const genAvatarURL = (key: string) => {
         return "https://source.boringavatars.com/beam/150/" + key + "?square&colors=264653,2a9d8f,e9c46a,f4a261,e76f51";
@@ -47,16 +86,7 @@ const AlbumListPage = () => {
         );
     }
 
-    useEffect(() => {
-        axios
-            .get("/back/album")
-            .then(response => (async () => {
-                setAlbums(response.data);
-            })())
-            .catch(() => {
-                showMsg(["error", "アルバム情報の取得に失敗しました"])
-            });
-    }, []);
+    useEffect(getAlbums, []);
 
     return (
         <div>
@@ -82,7 +112,24 @@ const AlbumListPage = () => {
                 }}
             >
                 { albums.map((album) => createAlbumCard(album)) }
-            </div> 
+            </div>
+            <Fab
+                color="primary"
+                onClick={() => showAlbumSettingsDialog(true)}
+                sx={{
+                    position: "absolute",
+                    top: "20px",
+                    right: "20px",
+                    margin: "5px"
+                }}
+            >
+                <AddIcon />
+            </Fab>
+            <AlbumSettingsDialog
+                initValues={null}
+                submitText="作成"
+                onSubmit={(values) => createAlbum(values)}
+            />
         </div>
     );
 }

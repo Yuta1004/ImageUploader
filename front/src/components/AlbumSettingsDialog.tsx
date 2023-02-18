@@ -13,7 +13,7 @@ import Switch from "@mui/material/Switch";
 
 import { MsgContext, AlbumSettingsDialogContext } from "../App";
 
-interface AlbumSettingsDialogValues {
+export interface AlbumSettingsDialogValues {
     name: string,
     passphrase: string,
     writable: boolean,
