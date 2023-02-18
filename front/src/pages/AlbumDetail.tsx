@@ -13,7 +13,9 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Dialog from "@mui/material/Dialog";
+import Button from "@mui/material/Button";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { MuiFileInput } from "mui-file-input";
 
 import { MsgContext } from "../App";
 import Album from "../model/Album";
@@ -30,12 +32,15 @@ const AlbumDetailPage = () => {
     const [showImgStat, setShowImgStat] = useState(false);
     const [showImgURL, setShowImgURL] = useState("");
 
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
     const [_, showMsg] = useContext(MsgContext);
 
     const loadImages = (albumId: string) => {
         if (albumId !== "") {
+            const headers = { withCredentials: true };
             axios
-                .get("/back/album/"+albumId, { withCredentials: true })
+                .get("/back/album/"+albumId, { headers })
                 .then(response => (async () => {
                     setAuthStat(true);
                     setAlbum(response.data);
@@ -48,8 +53,9 @@ const AlbumDetailPage = () => {
 
     const removeImage = (fileURL: string) => {
         if (window.confirm("本当に削除しても良いですか？ （この操作は取り消せません）")) {
+            const headers = { withCredentials: true };
             axios
-                .delete(fileURL, { withCredentials: true })
+                .delete(fileURL, { headers })
                 .then(_ => (async () => {
                     loadImages(albumId);
                 })())
@@ -59,15 +65,33 @@ const AlbumDetailPage = () => {
         }
     };
 
-    useEffect(() => {
-        const passphrase = window.prompt("合言葉を入力してください", "");
-        setCookies("IU-Passphrase", passphrase);
+    const saveImages = () => {
+        if (albumId !== "") {
+            var ffiles = new FormData();
+            for(var idx = 0; idx < selectedFiles.length; ++ idx) {
+                const file = selectedFiles[idx];
+                if (!file.type.startsWith("image")) {
+                    showMsg(["error", "画像でないファイルが含まれています"]);
+                    return;
+                }
+                ffiles.append(file.name, file);
+            } 
 
-        const query = new URLSearchParams(location.search);   
-        const _albumId = query.get("id") === null ? "" : query.get("id")!;
-        setAlbumId(_albumId);
-        loadImages(_albumId);
-    }, []);
+            const headers = {
+                withCredentials: true,
+                "content-type": "multipart/form-data"
+            };
+            axios
+                .put("/back/album/"+albumId, ffiles, { headers })
+                .then(() => {
+                    showMsg(["success", "ファイル送信に成功しました"]);
+                    loadImages(albumId);
+                })
+                .catch(() => {
+                    showMsg(["error", "ファイル送信に失敗しました"]);
+                })
+        }
+    };
 
     const createImageCard = (fileURL: string) => {
         return (
@@ -108,6 +132,16 @@ const AlbumDetailPage = () => {
             </Card>
         );
     }
+
+    useEffect(() => {
+        const passphrase = window.prompt("合言葉を入力してください", "");
+        setCookies("IU-Passphrase", passphrase);
+
+        const query = new URLSearchParams(location.search);   
+        const _albumId = query.get("id") === null ? "" : query.get("id")!;
+        setAlbumId(_albumId);
+        loadImages(_albumId);
+    }, []);
 
     return (
         <Paper
@@ -157,6 +191,28 @@ const AlbumDetailPage = () => {
                 >
                     { album !== null && "最終更新 : " + album.last_update }
                 </Typography>
+                <Stack
+                    spacing={2}
+                    direction="row"
+                    sx={{
+                        width: "50%",
+                        margin: "20px auto",
+                        justifyContent: "center",
+                        display: album?.writable ? "flex" : "none"
+                    }} 
+                >
+                    <MuiFileInput
+                        multiple
+                        value={selectedFiles}
+                        onChange={(files) => setSelectedFiles(files)}
+                    />
+                    <Button
+                        variant="outlined"
+                        onClick={saveImages}
+                    >
+                        写真を追加する
+                    </Button>
+                </Stack>
                 <div
                     style={{
                         width: "100%",
@@ -164,7 +220,7 @@ const AlbumDetailPage = () => {
                         display: "grid",
                         gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
                         gap: "20px",
-                        padding: "75px 0 75px 0",
+                        padding: "50px 0 50px 0",
                     }}
                 >
                     { album !== null && album.files.map((fileURL) => createImageCard("/back/album/" + fileURL)) }
