@@ -166,6 +166,17 @@ async fn remove_album(req: HttpRequest) -> impl Responder {
 
 #[get("/album/{album}/{file:.*}")]
 async fn get_image_in_album(req: HttpRequest) -> impl Responder {
+    let passphrase = match req.headers().get("IU-Passphrase") {
+        Some(passphrase) => passphrase.to_str().unwrap(),
+        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
+            .body("Passphrase is not given.")
+    };
+
+    let album_id = req.match_info().get("album").unwrap();
+    if let Err(resp) = get_album(album_id, passphrase) {
+        return resp;
+    }
+
     let path = req.uri().path().replace("/album", "");
     match s3::get_file(&path).await {
         Ok((mime, body)) =>
@@ -180,6 +191,17 @@ async fn get_image_in_album(req: HttpRequest) -> impl Responder {
 
 #[delete("/album/{album}/{file:.*}")]
 async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
+    let passphrase = match req.headers().get("IU-Passphrase") {
+        Some(passphrase) => passphrase.to_str().unwrap(),
+        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
+            .body("Passphrase is not given.")
+    };
+
+    let album_id = req.match_info().get("album").unwrap();
+    if let Err(resp) = get_album(album_id, passphrase) {
+        return resp;
+    }
+
     let path = req.uri().path().replace("/album", "");
     match s3::remove_file(&path).await {
         Ok(_) =>
