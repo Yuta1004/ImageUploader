@@ -14,6 +14,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Dialog from "@mui/material/Dialog";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { MuiFileInput } from "mui-file-input";
 
@@ -34,10 +35,13 @@ const AlbumDetailPage = () => {
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
+    const [nowLoading, setLoadingStat] = useState(false);
+
     const [_, showMsg] = useContext(MsgContext);
 
     const loadImages = (albumId: string) => {
         if (albumId !== "") {
+            setLoadingStat(true);
             const headers = { withCredentials: true };
             axios
                 .get("/back/album/"+albumId, { headers })
@@ -47,20 +51,29 @@ const AlbumDetailPage = () => {
                 })())
                 .catch(() => {
                     setAuthStat(false);
+                })
+                .finally(() => {
+                    setLoadingStat(false)
                 });
         }
     };
 
     const removeImage = (fileURL: string) => {
         if (window.confirm("本当に削除しても良いですか？ （この操作は取り消せません）")) {
+            setLoadingStat(true);
             const headers = { withCredentials: true };
             axios
                 .delete(fileURL, { headers })
                 .then(_ => (async () => {
+                    showMsg(["success", "ファイル削除に成功しました"]);
                     loadImages(albumId);
                 })())
                 .catch(() => {
+                    showMsg(["success", "ファイル削除に失敗しました"]);
                     setAuthStat(false);
+                })
+                .finally(() => {
+                    setLoadingStat(false);
                 });
         }
     };
@@ -77,6 +90,7 @@ const AlbumDetailPage = () => {
                 ffiles.append(file.name, file);
             } 
 
+            setLoadingStat(true);
             const headers = {
                 withCredentials: true,
                 "content-type": "multipart/form-data"
@@ -90,6 +104,9 @@ const AlbumDetailPage = () => {
                 .catch(() => {
                     showMsg(["error", "ファイル送信に失敗しました"]);
                 })
+                .finally(() => {
+                    setLoadingStat(false);
+                });
         }
     };
 
@@ -231,6 +248,18 @@ const AlbumDetailPage = () => {
                 >
                     <img src={ showImgURL }/>
                 </Dialog>
+                <CircularProgress
+                    size={80}
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        margin: "auto",
+                        display: nowLoading ? "inline" : "none"
+                    }}
+                />
             </div>
         </Paper>
     );
