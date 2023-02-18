@@ -16,6 +16,7 @@ async fn main() -> std::io::Result<()> {
 
                 // /album/{album}
                 .service(endpoints::get_image_list_in_album)
+                .service(endpoints::update_album)
                 .service(endpoints::upload_image_to_album)
                 .service(endpoints::remove_album)
 

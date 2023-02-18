@@ -128,14 +128,14 @@ const AlbumDetailPage = () => {
             "IU-AdminPassword": adminPassword,
             "content-type": "application/x-www-form-urlencoded"
         };
-        // axios
-        //     .post("/back/album", albumInfo, { headers })
-        //     .then(_ => (async () => {
-        //         window.location.reload();
-        //     })())
-        //     .catch((err) => {
-        //         showMsg(["error", "アルバム情報更新に失敗しました : " + err]);
-        //     })
+        axios
+            .post("/back/album/"+album?.id, albumInfo, { headers })
+            .then(_ => (async () => {
+                window.location.reload();
+            })())
+            .catch((err) => {
+                showMsg(["error", "アルバム情報更新に失敗しました : " + err]);
+            })
     }
 
     const createImageCard = (fileURL: string) => {

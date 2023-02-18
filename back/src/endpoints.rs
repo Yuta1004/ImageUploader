@@ -125,6 +125,17 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
         .json(AlbumPubInfo::from(album, files))
 }
 
+#[post("/album/{album}")]
+async fn update_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl Responder {
+    let album_id = req.match_info().get("album").unwrap().to_string();
+    match mysql::update_album(&album_id, &form.name, form.writable, form.removable, &form.passphrase) {
+        Ok(album_id) => HttpResponse::build(StatusCode::OK)
+            .body(album_id),
+        Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!")
+    }
+}
+
 #[put("/album/{album}")]
 async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
     let album = match get_album(&req) {
