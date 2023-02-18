@@ -278,13 +278,13 @@ const AlbumDetailPage = () => {
                 <CircularProgress
                     size={80}
                     style={{
-                        position: "absolute",
+                        position: "fixed",
                         top: 0,
                         bottom: 0,
                         left: 0,
                         right: 0,
                         margin: "auto",
-                        display: nowLoading ? "inline" : "none"
+                        display: nowLoading ? "inline" : "none",
                     }}
                 />
             </div> 
