@@ -11,10 +11,15 @@ type SContextType<T> = [T, React.Dispatch<React.SetStateAction<T>>];
 // メッセージ表示用Context
 export const MsgContext = createContext({} as SContextType<[string, string]>);
 
+// アルバム設定ダイアログ用Context
+export const AlbumSettingsDialogContext = createContext({} as SContextType<boolean>);
+
 const App = () => {
     const location = useLocation();
 
     const [msg, showMsg] = useState<[string, string]>(["", ""]);
+
+    const [dialogStat, showDialog] = useState<boolean>(false);
 
     return (
         <div
@@ -33,11 +38,13 @@ const App = () => {
                     timeout={400}
                 >
                     <MsgContext.Provider value={[ msg, showMsg ]}>
-                        <Routes location={ location }>
-                            <Route index         element={ <AlbumListPage/> }/>
-                            <Route path="/album" element={ <AlbumDetailPage/> }/>
-                        </Routes>
-                        <MsgViewer/>
+                        <AlbumSettingsDialogContext.Provider value={[dialogStat, showDialog]}>
+                            <Routes location={ location }>
+                                <Route index         element={ <AlbumListPage/> }/>
+                                <Route path="/album" element={ <AlbumDetailPage/> }/>
+                            </Routes>
+                            <MsgViewer/>
+                        </AlbumSettingsDialogContext.Provider>
                     </MsgContext.Provider>
                 </CSSTransition>
             </TransitionGroup>
