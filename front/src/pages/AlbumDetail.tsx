@@ -1,6 +1,7 @@
 import axios from "axios";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { useCookies } from "react-cookie";
 
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
@@ -16,6 +17,8 @@ import { MsgContext } from "../App";
 import Album from "../model/Album";
 
 const AlbumDetailPage = () => {
+    const [cookies, setCookies] = useCookies(["IU-Passphrase"]);
+
     const location = useLocation();
     const [albumId, setAlbumId] = useState("");
     const [album, setAlbum] = useState<Album | null>(null);
@@ -33,8 +36,10 @@ const AlbumDetailPage = () => {
 
     useEffect(() => {
         if (albumId !== "") {
+            const passphrase = window.prompt("合言葉を入力してください", "");
+            setCookies("IU-Passphrase", passphrase);
             axios
-                .get("/back/album/"+albumId)
+                .get("/back/album/"+albumId, { withCredentials: true })
                 .then(response => (async () => {
                     setAlbum(response.data);
                 })())
