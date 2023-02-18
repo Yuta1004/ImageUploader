@@ -235,17 +235,6 @@ const AlbumDetailPage = () => {
                     <EditIcon />
                 </Fab>
                 </Typography>
-                <Typography
-                    variant="h6"
-                    style={{
-                        width: "50%",
-                        margin: "0 auto",
-                        padding: "10px 0 0 0",
-                        textAlign: "center"
-                    }}
-                >
-                    { album !== null && "最終更新 : " + album.last_update }
-                </Typography>
                 <Stack
                     spacing={2}
                     direction="row"
