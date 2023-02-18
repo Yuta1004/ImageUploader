@@ -1,3 +1,5 @@
+use std::env;
+
 use actix_web::http::StatusCode;
 use actix_web::cookie::Cookie;
 use actix_web::{get, post, put, delete, web, HttpRequest, HttpResponse, Responder};
@@ -103,7 +105,17 @@ async fn get_all_albums() -> impl Responder {
 }
 
 #[post("/album")]
-async fn create_album(form: web::Form<NewAlbumForm>) -> impl Responder {
+async fn create_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl Responder {
+    match req.headers().get("IU-AdminPassword") {
+        Some(admin_password) =>
+            if admin_password.to_str().unwrap() != env::var("IUPLOADER_ADMIN_PASSWORD").unwrap() {
+                return HttpResponse::build(StatusCode::UNAUTHORIZED)
+                    .body("Admin Password may be wrong.")
+            }
+        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
+            .body("Admin Password is not given.")
+    }
+
     match mysql::create_album(&form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => HttpResponse::build(StatusCode::OK)
             .body(album_id),
@@ -127,6 +139,16 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
 
 #[post("/album/{album}")]
 async fn update_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl Responder {
+    match req.headers().get("IU-AdminPassword") {
+        Some(admin_password) =>
+            if admin_password.to_str().unwrap() != env::var("IUPLOADER_ADMIN_PASSWORD").unwrap() {
+                return HttpResponse::build(StatusCode::UNAUTHORIZED)
+                    .body("Admin Password may be wrong.")
+            }
+        None => return HttpResponse::build(StatusCode::BAD_REQUEST)
+            .body("Admin Password is not given.")
+    }
+
     let album_id = req.match_info().get("album").unwrap().to_string();
     match mysql::update_album(&album_id, &form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => HttpResponse::build(StatusCode::OK)

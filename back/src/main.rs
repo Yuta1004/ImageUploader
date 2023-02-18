@@ -2,11 +2,18 @@ mod s3;
 mod mysql;
 mod endpoints;
 
+use std::env;
+
 use actix_web::middleware::Logger;
 use actix_web::{App, HttpServer};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    if let Err(_) = env::var("IUPLOADER_ADMIN_PASSWORD") {
+        eprintln!("Error! ENV \"IUPLOADER_ADMIN_PASSWORD\" is not registered.");
+        std::process::exit(1);
+    }
+
     env_logger::init();
     HttpServer::new(||
             App::new()
