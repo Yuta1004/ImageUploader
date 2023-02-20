@@ -35,13 +35,13 @@ pub fn save_item(album: &str, _type: model::ItemType, name: &str, path: &str) ->
     Ok(())
 }
 
-pub fn remove_item(album: &str, item_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn remove_item(album: &str, item_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     use schema::items::dsl::*;
 
     let mut conn = create_connection()?;
     diesel::delete(schema::items::dsl::items)
         .filter(album_id.eq(album))
-        .filter(name.eq(item_name))
+        .filter(path.eq(item_path))
         .execute(&mut conn)?;
     Ok(())
 }
