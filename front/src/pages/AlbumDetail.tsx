@@ -227,13 +227,24 @@ const AlbumDetailPage = () => {
                     }}
                 >
                     { album !== null && album.name }
-                <Fab
-                    size="small"
-                    color="primary"
-                    onClick={() => showAlbumSettingsDialog(true)}
+                    <Fab
+                        size="small"
+                        color="primary"
+                        onClick={() => showAlbumSettingsDialog(true)}
+                    >
+                        <EditIcon />
+                    </Fab>
+                </Typography>
+                <Typography
+                    variant="h6"
+                    style={{
+                        width: "50%",
+                        margin: "0 auto",
+                        padding: "10px 0 0 0",
+                        textAlign: "center"
+                    }}
                 >
-                    <EditIcon />
-                </Fab>
+                    { album !== null && "最終更新 : " + album.last_updated_at }
                 </Typography>
                 <Stack
                     spacing={2}
