@@ -7,7 +7,8 @@ use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use serde::{Serialize, Deserialize};
 
-use crate::{mysql, s3};
+use crate::s3;
+use crate::mysql::{album, item};
 
 #[derive(Serialize)]
 struct AlbumPubInfo {
@@ -21,7 +22,7 @@ struct AlbumPubInfo {
 }
 
 impl AlbumPubInfo {
-    pub fn from(album: mysql::model::Album, files: Vec<String>) -> AlbumPubInfo {
+    pub fn from(album: album::model::Album, files: Vec<String>) -> AlbumPubInfo {
         AlbumPubInfo {
             id: album.id,
             name: album.name,
@@ -42,9 +43,9 @@ struct NewAlbumForm {
     passphrase: String
 }
 
-fn get_album(req: &HttpRequest) -> Result<mysql::model::Album, HttpResponse> {
+fn get_album(req: &HttpRequest) -> Result<album::model::Album, HttpResponse> {
     let album_id = req.match_info().get("album").unwrap();
-    let album = match mysql::check_album(&album_id.to_string()) {
+    let album = match album::get_album(&album_id.to_string()) {
         Ok(Some(album)) => album,
         Ok(None) => return Err(
             HttpResponse::build(StatusCode::NOT_FOUND)
@@ -91,7 +92,7 @@ fn get_album(req: &HttpRequest) -> Result<mysql::model::Album, HttpResponse> {
 
 #[get("/album")]
 async fn get_all_albums() -> impl Responder {
-    match mysql::get_all_albums() {
+    match album::get_all_albums() {
         Ok(albums) => {
             let albums = albums
                 .into_iter()
@@ -118,7 +119,7 @@ async fn create_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl R
             .body("Admin Password is not given.")
     }
 
-    match mysql::create_album(&form.name, form.writable, form.removable, &form.passphrase) {
+    match album::create_album(&form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => HttpResponse::build(StatusCode::OK)
             .body(album_id),
         Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
@@ -152,7 +153,7 @@ async fn update_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl R
     }
 
     let album_id = req.match_info().get("album").unwrap().to_string();
-    match mysql::update_album(&album_id, &form.name, form.writable, form.removable, &form.passphrase) {
+    match album::update_album(&album_id, &form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => HttpResponse::build(StatusCode::OK)
             .body(album_id),
         Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
@@ -200,7 +201,7 @@ async fn remove_album(req: HttpRequest) -> impl Responder {
         Err(resp) => return resp
     };
 
-    match mysql::remove_album(&album.id) {
+    match album::remove_album(&album.id) {
         Ok(_) => HttpResponse::build(StatusCode::OK)
             .body(album.id),
         Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
