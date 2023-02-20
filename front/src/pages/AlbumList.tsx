@@ -82,8 +82,12 @@ const AlbumListPage = () => {
                     <Typography gutterBottom variant="h5" component="div">
                         { album.name }
                     </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        最終更新 : { album.last_updated_at }
+                    </Typography>
                     <Stack direction="row" spacing={1} style={{ margin: "15px 0 0 0" }}>
                         { album.writable || album.removable ? <Chip label="編集可能" color="success" variant="outlined" /> : <></> }
+                        <Chip label={ "アイテム数: " + album.items_count } color="success" variant="outlined" /> 
                     </Stack>
                 </CardContent>
             </Card>

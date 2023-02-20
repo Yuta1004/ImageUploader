@@ -15,36 +15,6 @@ async fn create_connection() -> Client {
     Client::from_conf(s3_conf)
 }
 
-pub async fn save_file(path: &str, body: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
-    let body = ByteStream::from(body);
-    create_connection().await
-        .put_object()
-        .bucket(BUCKET)
-        .key(path)
-        .body(body)
-        .send()
-        .await?;
-    Ok(())
-}
-
-pub async fn get_file_list(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let s3 = create_connection().await;
-    let objects = s3
-        .list_objects_v2()
-        .bucket(BUCKET)
-        .prefix(path)
-        .send()
-        .await?;
-
-    let file_list = objects
-        .contents()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|obj| obj.key().unwrap().to_string())
-        .collect();
-    Ok(file_list)
-}
-
 pub async fn get_file(path: &str) -> Result<(String, Bytes), Box<dyn std::error::Error>> {
     let s3 = create_connection().await;
     let resp = s3
@@ -64,6 +34,18 @@ pub async fn get_file(path: &str) -> Result<(String, Bytes), Box<dyn std::error:
         .await?
         .into_bytes();
     Ok((mime, body))
+}
+
+pub async fn save_file(path: &str, body: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+    let body = ByteStream::from(body);
+    create_connection().await
+        .put_object()
+        .bucket(BUCKET)
+        .key(path)
+        .body(body)
+        .send()
+        .await?;
+    Ok(())
 }
 
 pub async fn remove_file(path: &str) -> Result<(), Box<dyn std::error::Error>> {
