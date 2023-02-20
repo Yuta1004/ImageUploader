@@ -20,7 +20,7 @@ CREATE TABLE item_type (
     `type`      INT                     PRIMARY KEY,
     `name`      VARCHAR(32)  NOT NULL
 );
-INSERT INTO item_type VALUES (0, "picture"), (1, "youtube");
+INSERT INTO item_type VALUES (0, "image"), (1, "youtube");
 
 /* 3. アイテム情報 */
 DROP TABLE IF EXISTS items;

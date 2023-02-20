@@ -17,5 +17,6 @@ diesel::table! {
         _type -> Text,
         name -> Text,
         path -> Text,
+        uploaded_at -> Text,
     }
 }
