@@ -15,7 +15,8 @@ struct AlbumPubInfo {
     name: String,
     writable: bool,
     removable: bool,
-    last_update: String,
+    last_updated_at: String,
+    items_count: i32,
     files: Vec<String>,
 }
 
@@ -26,7 +27,8 @@ impl AlbumPubInfo {
             name: album.name,
             writable: album.writable,
             removable: album.removable,
-            last_update: album.last_update,
+            last_updated_at: album.last_updated_at,
+            items_count: album.items_count,
             files
         }
     }
