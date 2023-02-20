@@ -6,6 +6,7 @@ use actix_web::{get, post, put, delete, web, HttpRequest, HttpResponse, Responde
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use serde::{Serialize, Deserialize};
+use percent_encoding::percent_decode;
 
 use crate::s3;
 use crate::mysql::{album, item};
@@ -83,7 +84,7 @@ fn get_album(req: &HttpRequest) -> Result<album::model::Album, HttpResponse> {
             let passphrase = cookies.to_str().unwrap().split(";").find_map(|cookie| {
                 let cookie = Cookie::parse(cookie).unwrap();
                 if cookie.name() == "IU-Passphrase" {
-                    Some(cookie.value().to_string())
+                    Some(percent_decode(cookie.value().as_bytes()).decode_utf8().unwrap().to_string())
                 } else {
                     None 
                 }
@@ -212,6 +213,7 @@ async fn get_image_in_album(req: HttpRequest) -> impl Responder {
         Err(resp) => return resp
     };
     let file_name = req.match_info().get("file").unwrap();
+    let file_name = percent_decode(file_name.as_bytes()).decode_utf8().unwrap();
     let file_path = format!("{}/{}", album_id, file_name);
 
     match s3::get_file(&file_path).await {
@@ -242,11 +244,11 @@ async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl
         while let Some(chunk) = field.next().await {
             body.extend_from_slice(&chunk.unwrap())
         }
-        let filename = field.name();
+        let file_name = percent_decode(field.name().as_bytes()).decode_utf8().unwrap().to_string();
 
-        item::save_item(&album.id, item::model::ItemType::Image, filename, filename).unwrap();
+        item::save_item(&album.id, item::model::ItemType::Image, &file_name, &file_name).unwrap();
         s3::save_file(
-            &format!("{}/{}", &album.id, filename),
+            &format!("{}/{}", &album.id, file_name),
             body.to_vec()
         ).await.unwrap();
     }
@@ -266,9 +268,10 @@ async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
         Err(resp) => return resp
     };
     let file_name = req.match_info().get("file").unwrap();
+    let file_name = percent_decode(file_name.as_bytes()).decode_utf8().unwrap().to_string();
     let file_path = format!("{}/{}", album_id, file_name);
 
-    item::remove_item(&album_id, file_name).unwrap();
+    item::remove_item(&album_id, &file_name).unwrap();
     match s3::remove_file(&file_path).await {
         Ok(path) =>
             HttpResponse::build(StatusCode::OK)

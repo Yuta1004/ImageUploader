@@ -1146,6 +1146,7 @@ dependencies = [
  "env_logger",
  "futures",
  "http",
+ "percent-encoding",
  "rand",
  "serde",
  "tokio",
