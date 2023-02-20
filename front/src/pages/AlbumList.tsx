@@ -112,6 +112,7 @@ const AlbumListPage = () => {
             <div
                 style={{
                     width: "75%",
+                    minHeight: "100%",
                     margin: "0 auto",
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
@@ -121,6 +122,21 @@ const AlbumListPage = () => {
             >
                 { albums.map((album) => createAlbumCard(album)) }
             </div>
+            <Typography
+                variant="body1"
+                style={{
+                    width: "50%",
+                    margin: "0 auto",
+                    padding: "50px 0 0 0",
+                    textAlign: "center",
+                    position: "relative",
+                    bottom: 10,
+                    left: 0,
+                    right: 0
+                }}
+            >
+                © 2023 Yuta NAKAGAMI
+            </Typography>
             <Fab
                 color="primary"
                 onClick={() => showAlbumSettingsDialog(true)}
