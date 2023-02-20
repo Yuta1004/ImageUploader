@@ -22,13 +22,15 @@ async fn main() -> std::io::Result<()> {
                 .service(endpoints::create_album)
 
                 // /album/{album}
-                .service(endpoints::get_image_list_in_album)
                 .service(endpoints::update_album)
-                .service(endpoints::upload_image_to_album)
                 .service(endpoints::remove_album)
 
-                // /album/{album}/{file}
+                // / album/{album}/items
+                .service(endpoints::get_items_in_album)
+
+                // /album/{album}/items/image/{file}
                 .service(endpoints::get_image_in_album)
+                .service(endpoints::upload_image_to_album)
                 .service(endpoints::remove_image_in_album)
 
                 .wrap(Logger::default())

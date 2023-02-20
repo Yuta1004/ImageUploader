@@ -44,12 +44,12 @@ const AlbumDetailPage = () => {
 
     const [__, showAlbumSettingsDialog] = useContext(AlbumSettingsDialogContext);
 
-    const loadImages = (albumId: string) => {
+    const loadAlbum = (albumId: string) => {
         if (albumId !== "") {
             setLoadingStat(true);
             const headers = { withCredentials: true };
             axios
-                .get("/back/album/"+albumId, { headers })
+                .get("/back/album/"+albumId+"/items", { headers })
                 .then(response => (async () => {
                     setAuthStat(true);
                     setAlbum(response.data);
@@ -63,15 +63,38 @@ const AlbumDetailPage = () => {
         }
     };
 
-    const removeImage = (fileURL: string) => {
+    const updateAlbum = (values: AlbumSettingsDialogValues) => {
+        const adminPassword = window.prompt("管理者パスワードを入力してください");
+
+        const albumInfo = new URLSearchParams();
+        albumInfo.append("name", values.name);
+        albumInfo.append("passphrase", values.passphrase);
+        albumInfo.append("writable", values.writable ? "true" : "false");
+        albumInfo.append("removable", values.removable ? "true" : "false");
+
+        const headers = {
+            "IU-AdminPassword": adminPassword,
+            "content-type": "application/x-www-form-urlencoded"
+        };
+        axios
+            .post("/back/album/"+album?.id, albumInfo, { headers })
+            .then(_ => (async () => {
+                loadAlbum(albumId);
+            })())
+            .catch((_) => {
+                showMsg(["error", "アルバム情報更新に失敗しました"]);
+            })
+    }
+
+    const removeImage = (filePath: string) => {
         if (window.confirm("本当に削除しても良いですか？ （この操作は取り消せません）")) {
             setLoadingStat(true);
             const headers = { withCredentials: true };
             axios
-                .delete(fileURL, { headers })
+                .delete(filePath, { headers })
                 .then(_ => (async () => {
                     showMsg(["success", "ファイル削除に成功しました"]);
-                    loadImages(albumId);
+                    loadAlbum(albumId);
                 })())
                 .catch(() => {
                     showMsg(["success", "ファイル削除に失敗しました"]);
@@ -101,10 +124,10 @@ const AlbumDetailPage = () => {
                 "content-type": "multipart/form-data"
             };
             axios
-                .put("/back/album/"+albumId, ffiles, { headers })
+                .put("/back/album/"+albumId+"/items/image", ffiles, { headers })
                 .then(() => {
                     showMsg(["success", "ファイル送信に成功しました"]);
-                    loadImages(albumId);
+                    loadAlbum(albumId);
                 })
                 .catch(() => {
                     showMsg(["error", "ファイル送信に失敗しました"]);
@@ -115,38 +138,16 @@ const AlbumDetailPage = () => {
         }
     };
 
-    const updateAlbum = (values: AlbumSettingsDialogValues) => {
-        const adminPassword = window.prompt("管理者パスワードを入力してください");
-
-        const albumInfo = new URLSearchParams();
-        albumInfo.append("name", values.name);
-        albumInfo.append("passphrase", values.passphrase);
-        albumInfo.append("writable", values.writable ? "true" : "false");
-        albumInfo.append("removable", values.removable ? "true" : "false");
-
-        const headers = {
-            "IU-AdminPassword": adminPassword,
-            "content-type": "application/x-www-form-urlencoded"
-        };
-        axios
-            .post("/back/album/"+album?.id, albumInfo, { headers })
-            .then(_ => (async () => {
-                loadImages(albumId);
-            })())
-            .catch((_) => {
-                showMsg(["error", "アルバム情報更新に失敗しました"]);
-            })
-    }
-
-    const createImageCard = (fileURL: string) => {
+    const createImageCard = (fileName: string) => {
+        const filePath = "/back/album/"+album?.id+"/items/image/"+fileName;
         return (
             <Card>
                 <CardMedia
                     sx={{ height: 150 }}
-                    image={ fileURL }
+                    image={ filePath }
                     onClick={() => {
                         setShowImgStat(true);
-                        setShowImgURL(fileURL);
+                        setShowImgURL(filePath);
                     }}
                 />
                 <CardContent style={{ padding: "10px" }}>
@@ -162,12 +163,12 @@ const AlbumDetailPage = () => {
                             variant="body2"
                             color="text.secondary"
                         >
-                            { fileURL.split("/").slice(-1) }
+                            { fileName }
                         </Typography>
                         <IconButton
                             color="secondary"
                             size="small"
-                            onClick={() => { removeImage(fileURL) }}
+                            onClick={() => { removeImage(filePath) }}
                             sx={{ display: album?.removable ? "inline" : "none" }}
                         >
                             <DeleteOutlineIcon/>
@@ -185,7 +186,7 @@ const AlbumDetailPage = () => {
         const query = new URLSearchParams(location.search);   
         const _albumId = query.get("id") === null ? "" : query.get("id")!;
         setAlbumId(_albumId);
-        loadImages(_albumId);
+        loadAlbum(_albumId);
     }, []);
 
     return (
@@ -278,7 +279,7 @@ const AlbumDetailPage = () => {
                         padding: "50px 0 50px 0",
                     }}
                 >
-                    { album !== null && album.files.map((fileURL) => createImageCard("/back/album/" + fileURL)) }
+                    { album !== null && album.images.map((fileName) => createImageCard(fileName)) }
                 </div>
                 <Dialog
                     onClose={() => setShowImgStat(false)}

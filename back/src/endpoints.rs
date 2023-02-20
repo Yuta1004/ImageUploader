@@ -12,17 +12,31 @@ use crate::mysql::{album, item};
 
 #[derive(Serialize)]
 struct AlbumPubInfo {
+    // 基本情報
     id: String,
     name: String,
     writable: bool,
     removable: bool,
     last_updated_at: String,
     items_count: i32,
-    files: Vec<String>,
+
+    // アイテム
+    images: Vec<String>,                    // name, path
+    youtube_movies: Vec<(String, String)>   // name, id
 }
 
 impl AlbumPubInfo {
-    pub fn from(album: album::model::Album, files: Vec<String>) -> AlbumPubInfo {
+    pub fn from(album: album::model::Album, items: (Vec<item::model::Item>, Vec<item::model::Item>)) -> AlbumPubInfo {
+        let (images, youtube_movies) = items;
+        let images = images
+            .into_iter()
+            .map(|item| item.name)
+            .collect();
+        let youtube_movies = youtube_movies
+            .into_iter()
+            .map(|item| (item.name, item.path))
+            .collect();
+
         AlbumPubInfo {
             id: album.id,
             name: album.name,
@@ -30,7 +44,8 @@ impl AlbumPubInfo {
             removable: album.removable,
             last_updated_at: album.last_updated_at,
             items_count: album.items_count,
-            files
+            images,
+            youtube_movies
         }
     }
 }
@@ -96,7 +111,7 @@ async fn get_all_albums() -> impl Responder {
         Ok(albums) => {
             let albums = albums
                 .into_iter()
-                .map(|album| AlbumPubInfo::from(album, vec![]))
+                .map(|album| AlbumPubInfo::from(album, (vec![], vec![])))
                 .collect::<Vec<AlbumPubInfo>>();
             HttpResponse::build(StatusCode::OK)
                 .content_type("application/json")
@@ -127,19 +142,6 @@ async fn create_album(req: HttpRequest, form: web::Form<CreateAlbumForm>) -> imp
     }
 }
 
-#[get("/album/{album}")]
-async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
-    let album = match get_album(&req) {
-        Ok(album) => album,
-        Err(resp) => return resp
-    };
-
-    let files = s3::get_file_list(&format!("/{}", album.id)).await.unwrap();
-    HttpResponse::build(StatusCode::OK)
-        .content_type("application/json")
-        .json(AlbumPubInfo::from(album, files))
-}
-
 #[post("/album/{album}")]
 async fn update_album(req: HttpRequest, form: web::Form<CreateAlbumForm>) -> impl Responder {
     match req.headers().get("IU-AdminPassword") {
@@ -159,34 +161,6 @@ async fn update_album(req: HttpRequest, form: web::Form<CreateAlbumForm>) -> imp
         Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
             .body("Unknown Error occured!")
     }
-}
-
-#[put("/album/{album}")]
-async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
-    let album = match get_album(&req) {
-        Ok(album) => if !album.writable {
-            return HttpResponse::build(StatusCode::UNAUTHORIZED)
-                .body("Not allowed to put images to this album.")
-        } else {
-            album
-        },
-        Err(resp) => return resp
-    };
-
-    while let Ok(Some(mut field)) = payload.try_next().await {
-        let mut body = web::BytesMut::new();
-        while let Some(chunk) = field.next().await {
-            body.extend_from_slice(&chunk.unwrap())
-        }
-        let filename = field.name();
-
-        s3::save_file(
-            &format!("{}/{}", &album.id, filename),
-            body.to_vec()
-        ).await.unwrap();
-    }
-
-    HttpResponse::build(StatusCode::OK).body(album.id)
 }
 
 #[delete("/album/{album}")]
@@ -209,14 +183,32 @@ async fn remove_album(req: HttpRequest) -> impl Responder {
     }
 }
 
-#[get("/album/{album}/{file:.*}")]
-async fn get_image_in_album(req: HttpRequest) -> impl Responder {
-    if let Err(resp) = get_album(&req) {
-        return resp;
-    }
+#[get("/album/{album}/items")]
+async fn get_items_in_album(req: HttpRequest) -> impl Responder {
+    let album = match get_album(&req) {
+        Ok(album) => album,
+        Err(resp) => return resp
+    };
 
-    let path = req.uri().path().replace("/album", "");
-    match s3::get_file(&path).await {
+    match item::get_items(&album.id) {
+        Ok(items) => HttpResponse::build(StatusCode::OK)
+            .content_type("application/json")
+            .json(AlbumPubInfo::from(album, items)),
+        Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Unknown Error occured!")
+    }
+}
+
+#[get("/album/{album}/items/image/{file:.*}")]
+async fn get_image_in_album(req: HttpRequest) -> impl Responder {
+    let album_id = match get_album(&req) {
+        Ok(album) => album.id,
+        Err(resp) => return resp
+    };
+    let file_name = req.match_info().get("file").unwrap();
+    let file_path = format!("{}/{}", album_id, file_name);
+
+    match s3::get_file(&file_path).await {
         Ok((mime, body)) =>
             HttpResponse::build(StatusCode::OK)
                 .content_type(mime)
@@ -227,15 +219,52 @@ async fn get_image_in_album(req: HttpRequest) -> impl Responder {
     }
 }
 
-#[delete("/album/{album}/{file:.*}")]
-async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
-    if let Err(resp) = get_album(&req) {
-        return resp;
+#[put("/album/{album}/items/image")]
+async fn upload_image_to_album(req: HttpRequest, mut payload: Multipart) -> impl Responder {
+    let album = match get_album(&req) {
+        Ok(album) => if !album.writable {
+            return HttpResponse::build(StatusCode::UNAUTHORIZED)
+                .body("Not allowed to put images to this album.")
+        } else {
+            album
+        },
+        Err(resp) => return resp
+    };
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let mut body = web::BytesMut::new();
+        while let Some(chunk) = field.next().await {
+            body.extend_from_slice(&chunk.unwrap())
+        }
+        let filename = field.name();
+
+        item::save_item(&album.id, item::model::ItemType::Image, filename, filename).unwrap();
+        s3::save_file(
+            &format!("{}/{}", &album.id, filename),
+            body.to_vec()
+        ).await.unwrap();
     }
 
-    let path = req.uri().path().replace("/album", "");
-    match s3::remove_file(&path).await {
-        Ok(_) =>
+    HttpResponse::build(StatusCode::OK).body(album.id)
+}
+
+#[delete("/album/{album}/items/image/{file:.*}")]
+async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
+    let album_id = match get_album(&req) {
+        Ok(album) => if !album.removable {
+            return HttpResponse::build(StatusCode::UNAUTHORIZED)
+                .body("Not allowed to put images to this album.")
+        } else {
+            album.id
+        },
+        Err(resp) => return resp
+    };
+    let file_name = req.match_info().get("file").unwrap();
+    let file_path = format!("{}/{}", album_id, file_name);
+
+    item::remove_item(&album_id, file_name).unwrap();
+    match s3::remove_file(&file_path).await {
+        Ok(path) =>
             HttpResponse::build(StatusCode::OK)
                 .body(path),
         Err(_) =>

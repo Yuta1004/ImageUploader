@@ -12,14 +12,14 @@ pub struct Item {
 }
 
 pub enum ItemType {
-    Picture = 0,
+    Image = 0,
     YouTube = 1,
 }
 
 impl Into<i32> for ItemType {
     fn into(self) -> i32 {
         match self {
-            ItemType::Picture => 0,
+            ItemType::Image => 0,
             ItemType::YouTube => 1,
         }
     }
