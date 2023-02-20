@@ -16,6 +16,7 @@ import Dialog from "@mui/material/Dialog";
 import Button from "@mui/material/Button";
 import Fab from "@mui/material/Fab";
 import EditIcon from "@mui/icons-material/Edit";
+import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { MuiFileInput } from "mui-file-input";
@@ -35,6 +36,9 @@ const AlbumDetailPage = () => {
 
     const [showImgStat, setShowImgStat] = useState(false);
     const [showImgURL, setShowImgURL] = useState("");
+
+    const inputYMovieName = useRef<HTMLInputElement | null>(null);
+    const inputYMovieURL = useRef<HTMLInputElement | null>(null);
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -179,6 +183,102 @@ const AlbumDetailPage = () => {
         );
     }
 
+    const removeYMovie = (movieId: string) => {
+        if (window.confirm("本当に削除しても良いですか？ （この操作は取り消せません）")) {
+            setLoadingStat(true);
+            const headers = { withCredentials: true };
+            axios
+                .delete("/back/album/"+albumId+"/items/youtube/"+movieId, { headers })
+                .then(_ => (async () => {
+                    showMsg(["success", "動画の削除に成功しました"]);
+                    loadAlbum(albumId);
+                })())
+                .catch(() => {
+                    showMsg(["success", "動画の削除に失敗しました"]);
+                    setAuthStat(false);
+                })
+                .finally(() => {
+                    setLoadingStat(false);
+                });
+        }
+    };
+
+    const saveYoutubeMovie = () => {
+        if (albumId !== "") {
+            const name = inputYMovieName.current?.value!;
+            const url = inputYMovieURL.current?.value!;
+            if (name === "" || url === "") {
+                showMsg(["error", "全ての項目に入力してください"]);
+                return;
+            }
+            if (!url.startsWith("https://youtu.be/")) {
+                showMsg(["error", "リンクの形式が正しくありません"]);
+                return;
+            }
+
+            var movie_info = new URLSearchParams();
+            movie_info.append("name", name);
+            movie_info.append("movie_id", url.split("/").slice(-1)[0]);
+
+            setLoadingStat(true);
+            const headers = {
+                withCredentials: true,
+                "content-type": "application/x-www-form-urlencoded"
+            };
+            axios
+                .put("/back/album/"+albumId+"/items/youtube", movie_info, { headers })
+                .then(() => {
+                    showMsg(["success", "動画リンクの送信に成功しました"]);
+                    loadAlbum(albumId);
+                })
+                .catch(() => {
+                    showMsg(["error", "動画リンクの送信に失敗しました"]);
+                })
+                .finally(() => {
+                    setLoadingStat(false);
+                });
+        }
+    };
+
+    const createYMovieCard = (ymovie: [string, string]) => {
+        const [name, movieId] = ymovie;
+        return (
+            <Card>
+                <iframe
+                    width="100%"
+                    src={ "https://www.youtube.com/embed/"+movieId }
+                    title="YouTube video player" 
+                    allowFullScreen
+                />
+                <CardContent style={{ padding: "10px" }}>
+                    <Stack
+                        direction="row"
+                        sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center"
+                        }}
+                    >
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                        >
+                            { name }
+                        </Typography>
+                        <IconButton
+                            color="secondary"
+                            size="small"
+                            onClick={() => { removeYMovie(movieId) }}
+                            sx={{ display: album?.removable ? "inline" : "none" }}
+                        >
+                            <DeleteOutlineIcon/>
+                        </IconButton>
+                    </Stack>
+                </CardContent>
+            </Card>
+        );
+    }
+
     useEffect(() => {
         const passphrase = window.prompt("合言葉を入力してください", "");
         setCookies("IU-Passphrase", passphrase);
@@ -201,6 +301,7 @@ const AlbumDetailPage = () => {
                 background: "rgba(255, 255, 255, 0.8)"
             }}
         >
+            {/* 認証エラーメッセージ */}
             <div style={{ display: authStat ? "none" : "inline" }}>
                 <Alert
                     severity="error"
@@ -214,7 +315,10 @@ const AlbumDetailPage = () => {
                     <strong>合言葉</strong>を確認してください
                 </Alert>
             </div>
+
+            {/* 本体 */}
             <div style={{ display: authStat ? "inline" : "none" }}>
+                {/* アルバムタイトル */}
                 <Typography
                     variant="h2"
                     style={{
@@ -247,46 +351,121 @@ const AlbumDetailPage = () => {
                 >
                     { album !== null && "最終更新 : " + album.last_updated_at }
                 </Typography>
+
+                {/* リンク・画像投稿フォーム */}
                 <Stack
-                    spacing={2}
-                    direction="row"
+                    spacing={1}
+                    direction="column"
                     sx={{
-                        width: "50%",
-                        margin: "20px auto",
-                        justifyContent: "center",
-                        display: album?.writable ? "flex" : "none"
-                    }} 
-                >
-                    <MuiFileInput
-                        multiple
-                        value={selectedFiles}
-                        onChange={(files) => setSelectedFiles(files)}
-                    />
-                    <Button
-                        variant="outlined"
-                        onClick={saveImages}
-                    >
-                        写真を追加する
-                    </Button>
-                </Stack>
-                <div
-                    style={{
-                        width: "100%",
-                        margin: "0 auto",
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                        gap: "20px",
-                        padding: "50px 0 50px 0",
+                        display: album?.writable ? "flex" : "none",
+                        alignItems: "center",
+                        margin: "10px",
                     }}
                 >
-                    { album !== null && album.images.map((fileName) => createImageCard(fileName)) }
+                    <Stack
+                        spacing={2}
+                        direction="row"
+                        sx={{
+                            width: "50%",
+                            margin: "0 auto",
+                            justifyContent: "center"
+                        }} 
+                    >
+                        <TextField
+                            size="small"
+                            label="動画名"
+                            variant="outlined"
+                            inputRef={ inputYMovieName }
+                            sx={{ flexGrow: 1 }}
+                        />
+                        <TextField
+                            size="small"
+                            label="YouTubeリンク"
+                            variant="outlined"
+                            inputRef={ inputYMovieURL }
+                            sx={{ flexGrow: 1 }}
+                        />
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={ saveYoutubeMovie }
+                        >
+                            動画を追加する
+                        </Button>
+                    </Stack>
+                    <Stack
+                        spacing={2}
+                        direction="row"
+                        sx={{
+                            width: "50%",
+                            margin: "0 auto",
+                            justifyContent: "center",
+                        }} 
+                    >
+                        <MuiFileInput
+                            multiple
+                            size="small"
+                            value={ selectedFiles }
+                            onChange={(files) => setSelectedFiles(files)}
+                            sx={{ flexGrow: 1}}
+                        />
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={ saveImages }
+                        >
+                            写真を追加する
+                        </Button>
+                    </Stack>
+                </Stack>
+
+                {/* 動画一覧 */}
+                <div style={{ display: album?.youtube_movies.length! > 0 ? "inline" : "none" }}>
+                    <Typography variant="h4">
+                        動画
+                    </Typography>
+                    <div
+                        style={{
+                            width: "100%",
+                            margin: "0 auto",
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                            gap: "20px",
+                            padding: "50px 0 50px 0",
+                        }}
+                    >
+                        { album !== null && album.youtube_movies.map((ymovie) => createYMovieCard(ymovie)) }
+                    </div>
                 </div>
+
+                {/* 画像一覧 */}
+                <div style={{ display: album?.images.length! > 0 ? "inline" : "none" }}>
+                    <Typography variant="h4">
+                        画像
+                    </Typography>
+                    <div
+                        style={{
+                            width: "100%",
+                            margin: "0 auto",
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                            gap: "20px",
+                            padding: "50px 0 50px 0",
+                        }}
+                    >
+                        { album !== null && album.images.map((fileName) => createImageCard(fileName)) }
+                    </div>
+                </div>
+
+                {/* 詳細表示 */}
                 <Dialog
                     onClose={() => setShowImgStat(false)}
                     open={ showImgStat }
                 >
                     <img src={ showImgURL }/>
                 </Dialog>
+
+                {/* ローディングアイコン */}
                 <CircularProgress
                     size={80}
                     style={{
@@ -300,6 +479,8 @@ const AlbumDetailPage = () => {
                     }}
                 />
             </div> 
+
+            {/* アルバム情報設定フォーム */}
             <AlbumSettingsDialog
                 initValues={{ ...album!, passphrase: "" }}
                 submitText="更新"
