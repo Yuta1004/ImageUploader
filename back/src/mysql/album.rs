@@ -15,7 +15,7 @@ pub fn get_all_albums() -> Result<Vec<model::Album>, Box<dyn std::error::Error>>
     Ok(result)
 }
 
-pub fn get_album(album_id: &String) -> Result<Option<model::Album>, Box<dyn std::error::Error>> {
+pub fn get_album(album_id: &str) -> Result<Option<model::Album>, Box<dyn std::error::Error>> {
     use schema::albums_v::dsl::*;
 
     let mut conn = create_connection()?;
@@ -30,7 +30,7 @@ pub fn get_album(album_id: &String) -> Result<Option<model::Album>, Box<dyn std:
     }
 }
 
-pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: &String) -> Result<String, Box<dyn std::error::Error>> {
+pub fn create_album(name: &str, writable: bool, removable: bool, passphrase: &str) -> Result<String, Box<dyn std::error::Error>> {
     let album_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
     let new_album = model::NewAlbum::new(&album_id, &name, writable, removable, passphrase);
 
@@ -41,7 +41,7 @@ pub fn create_album(name: &String, writable: bool, removable: bool, passphrase: 
     Ok(album_id)
 }
 
-pub fn update_album(album_id: &String, name: &String, writable: bool, removable: bool, passphrase: &String) -> Result<String, Box<dyn std::error::Error>> {
+pub fn update_album(album_id: &str, name: &str, writable: bool, removable: bool, passphrase: &str) -> Result<String, Box<dyn std::error::Error>> {
     use schema::albums::dsl::id;
 
     let album = model::NewAlbum::new(album_id, name, writable, removable, passphrase);
@@ -54,7 +54,7 @@ pub fn update_album(album_id: &String, name: &String, writable: bool, removable:
     Ok(album_id.to_owned())
 }
 
-pub fn remove_album(album_id: &String) -> Result<(), Box<dyn std::error::Error>> {
+pub fn remove_album(album_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     use schema::albums::dsl::*;
 
     let mut conn = create_connection()?;

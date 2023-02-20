@@ -28,14 +28,14 @@ impl Into<i32> for ItemType {
 #[derive(Insertable, AsChangeset)]
 #[diesel(table_name = super::schema::items)]
 pub struct NewItem<'a> {
-    pub album_id: &'a String,
+    pub album_id: &'a str,
     pub _type: i32,
-    pub name: &'a String,
-    pub path: &'a String
+    pub name: &'a str,
+    pub path: &'a str
 }
 
 impl <'a> NewItem<'a> {
-    pub fn new(album_id: &'a String, _type: ItemType, name: &'a String, path: &'a String) -> NewItem<'a> {
+    pub fn new(album_id: &'a str, _type: ItemType, name: &'a str, path: &'a str) -> NewItem<'a> {
         NewItem {
             album_id,
             _type: _type.into(),

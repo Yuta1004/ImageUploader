@@ -45,7 +45,7 @@ struct CreateAlbumForm {
 
 fn get_album(req: &HttpRequest) -> Result<album::model::Album, HttpResponse> {
     let album_id = req.match_info().get("album").unwrap();
-    let album = match album::get_album(&album_id.to_string()) {
+    let album = match album::get_album(album_id) {
         Ok(Some(album)) => album,
         Ok(None) => return Err(
             HttpResponse::build(StatusCode::NOT_FOUND)
@@ -152,8 +152,8 @@ async fn update_album(req: HttpRequest, form: web::Form<CreateAlbumForm>) -> imp
             .body("Admin Password is not given.")
     }
 
-    let album_id = req.match_info().get("album").unwrap().to_string();
-    match album::update_album(&album_id, &form.name, form.writable, form.removable, &form.passphrase) {
+    let album_id = req.match_info().get("album").unwrap();
+    match album::update_album(album_id, &form.name, form.writable, form.removable, &form.passphrase) {
         Ok(album_id) => HttpResponse::build(StatusCode::OK)
             .body(album_id),
         Err(_) => HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
