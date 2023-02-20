@@ -36,7 +36,7 @@ impl AlbumPubInfo {
 }
 
 #[derive(Deserialize)]
-struct NewAlbumForm {
+struct CreateAlbumForm {
     name: String,
     writable: bool,
     removable: bool,
@@ -108,7 +108,7 @@ async fn get_all_albums() -> impl Responder {
 }
 
 #[post("/album")]
-async fn create_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl Responder {
+async fn create_album(req: HttpRequest, form: web::Form<CreateAlbumForm>) -> impl Responder {
     match req.headers().get("IU-AdminPassword") {
         Some(admin_password) =>
             if admin_password.to_str().unwrap() != env::var("IUPLOADER_ADMIN_PASSWORD").unwrap() {
@@ -141,7 +141,7 @@ async fn get_image_list_in_album(req: HttpRequest) -> impl Responder {
 }
 
 #[post("/album/{album}")]
-async fn update_album(req: HttpRequest, form: web::Form<NewAlbumForm>) -> impl Responder {
+async fn update_album(req: HttpRequest, form: web::Form<CreateAlbumForm>) -> impl Responder {
     match req.headers().get("IU-AdminPassword") {
         Some(admin_password) =>
             if admin_password.to_str().unwrap() != env::var("IUPLOADER_ADMIN_PASSWORD").unwrap() {
