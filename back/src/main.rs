@@ -33,6 +33,10 @@ async fn main() -> std::io::Result<()> {
                 .service(endpoints::upload_image_to_album)
                 .service(endpoints::remove_image_in_album)
 
+                // /album/{album}/items/youtube/{id}
+                .service(endpoints::upload_youtube_movie_to_album)
+                .service(endpoints::remove_youtube_movie_in_album)
+
                 .wrap(Logger::default())
         )
         .bind(("0.0.0.0", 50000))?

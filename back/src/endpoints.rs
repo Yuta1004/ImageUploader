@@ -58,6 +58,12 @@ struct CreateAlbumForm {
     passphrase: String
 }
 
+#[derive(Deserialize)]
+struct CreateYoutubeItem {
+    name: String,
+    movie_id: String
+}
+
 fn get_album(req: &HttpRequest) -> Result<album::model::Album, HttpResponse> {
     let album_id = req.match_info().get("album").unwrap();
     let album = match album::get_album(album_id) {
@@ -271,4 +277,37 @@ async fn remove_image_in_album(req: HttpRequest) -> impl Responder {
             HttpResponse::build(StatusCode::NOT_FOUND)
                 .body("The specified file is not found.")
     }
+}
+
+#[put("/album/{album}/items/youtube")]
+async fn upload_youtube_movie_to_album(req: HttpRequest, form: web::Form<CreateYoutubeItem>) -> impl Responder {
+    let album_id = match get_album(&req) {
+        Ok(album) => if !album.writable {
+            return HttpResponse::build(StatusCode::UNAUTHORIZED)
+                .body("Not allowed to put images to this album.")
+        } else {
+            album.id
+        },
+        Err(resp) => return resp
+    };
+
+    item::save_item(&album_id, item::model::ItemType::YouTube, &form.name, &form.movie_id).unwrap();
+    HttpResponse::build(StatusCode::OK).body(album_id)
+}
+
+#[delete("/album/{album}/items/youtube/{id:.*}")]
+async fn remove_youtube_movie_in_album(req: HttpRequest) -> impl Responder {
+    let album_id = match get_album(&req) {
+        Ok(album) => if !album.removable {
+            return HttpResponse::build(StatusCode::UNAUTHORIZED)
+                .body("Not allowed to put images to this album.")
+        } else {
+            album.id
+        },
+        Err(resp) => return resp
+    };
+    let youtube_id = req.match_info().get("id").unwrap();
+
+    item::remove_item(&album_id, youtube_id).unwrap();
+    HttpResponse::build(StatusCode::OK).body(youtube_id.to_string())
 }
