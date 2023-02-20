@@ -27,7 +27,7 @@ const AlbumListPage = () => {
 
     const [__, showAlbumSettingsDialog] = useContext(AlbumSettingsDialogContext);
 
-    const getAlbums = () => {
+    const loadAlbums = () => {
         setLoadingStat(true);
         axios
             .get("/back/album")
@@ -58,7 +58,7 @@ const AlbumListPage = () => {
         axios
             .post("/back/album", albumInfo, { headers })
             .then(_ => (async () => {
-                getAlbums();
+                loadAlbums();
             })())
             .catch((err) => {
                 showMsg(["error", "アルバム作成に失敗しました : " + err]);
@@ -94,7 +94,7 @@ const AlbumListPage = () => {
         );
     }
 
-    useEffect(getAlbums, []);
+    useEffect(loadAlbums, []);
 
     return (
         <div>
