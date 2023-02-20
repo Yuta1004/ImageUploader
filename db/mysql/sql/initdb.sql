@@ -52,7 +52,7 @@ CREATE VIEW albums_v AS
 /* 5. itemsテーブルのビュー */
 DROP VIEW IF EXISTS items_v;
 CREATE VIEW items_v AS
-    SELECT items.id AS id, item_type.name AS type,
+    SELECT items.album_id AS album_id, items.id AS id, item_type.name AS type,
            items.name AS name, items.path as path, items.uploaded_at AS uploaded_at
     FROM items
     LEFT JOIN item_type ON items.type = item_type.type;
