@@ -73,6 +73,7 @@ const AlbumListPage = () => {
         return (
             <Card
                 onClick={() => navigate("/album?id=" + album.id)} 
+                sx={{ height: "fit-content" }}
             >
                 <CardMedia
                     sx={{ height: 150 }}
@@ -97,7 +98,7 @@ const AlbumListPage = () => {
     useEffect(loadAlbums, []);
 
     return (
-        <div>
+        <div style={{ minHeight: "100vh" }}>
             <Typography
                 variant="h2"
                 align="center"
@@ -112,7 +113,7 @@ const AlbumListPage = () => {
             <div
                 style={{
                     width: "75%",
-                    minHeight: "100%",
+                    minHeight: "55vh",
                     margin: "0 auto",
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fill, minmax(275px, 1fr))",
