@@ -100,11 +100,11 @@ const AlbumListPage = () => {
         <div>
             <Typography
                 variant="h2"
+                align="center"
                 style={{
                     width: "50%",
                     margin: "0 auto",
-                    padding: "50px 0 0 0",
-                    textAlign: "center"
+                    padding: "50px 0 0 0"
                 }}
             >
                 Image Uploader
@@ -115,9 +115,9 @@ const AlbumListPage = () => {
                     minHeight: "100%",
                     margin: "0 auto",
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(275px, 1fr))",
                     gap: "40px",
-                    padding: "75px",
+                    padding: "75px 0",
                 }}
             >
                 { albums.map((album) => createAlbumCard(album)) }
