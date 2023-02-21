@@ -1,0 +1,74 @@
+version: "3"
+
+services:
+  proxy:
+    image: envoyproxy/envoy:v1.24.0
+    ports:
+    - ${IUPLOADER_PORT}:50000
+    volumes:
+    - type: bind
+      source: "./proxy/envoy.yaml"
+      target: "/etc/envoy/envoy.yaml"
+      read_only: true
+    environment:
+      TZ: Asia/Tokyo
+    depends_on:
+      - front
+      - back
+      - mysql
+      - minio
+
+  front:
+    build: ./front
+    image: iuploader/front:run
+    environment:
+      TZ: Asia/Tokyo
+
+  back:
+    build: ./back
+    image: iuploader/back:run
+    environment:
+      TZ: Asia/Tokyo
+      RUST_LOG: info
+      AWS_ACCESS_KEY_ID: root
+      AWS_SECRET_ACCESS_KEY: rootpass
+      AWS_REGION: ap-northeast-1
+      IUPLOADER_ADMIN_PASSWORD: ${IUPLOADER_ADMIN_PASSWORD}
+
+  mysql:
+    image: mysql:8.0
+    volumes:
+    - type: bind
+      source: ./db/mysql/sql
+      target: /docker-entrypoint-initdb.d
+      read_only: true
+    - type: bind
+      source: ./db/mysql/mysql.cnf
+      target: /etc/mysql/conf.d/mysql.cnf
+      read_only: true
+    - type: volume
+      source: mysql-v
+      target: /var/lib/mysql
+    environment:
+      TZ: Asia/Tokyo
+      MYSQL_ROOT_PASSWORD: mysql
+
+  minio:
+    image: minio/minio:RELEASE.2022-10-29T06-21-33Z.fips
+    command: server --console-address ":9001" /data
+    ports:
+    - 9001:9001
+    environment:
+      TZ: Asia/Tokyo
+      MINIO_ROOT_USER: root
+      MINIO_ROOT_PASSWORD: rootpass
+    volumes:
+    - type: volume
+      source: minio-v
+      target: "/data"
+
+volumes:
+  mysql-v:
+    driver: local
+  minio-v:
+    driver: local
